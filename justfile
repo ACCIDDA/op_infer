@@ -41,6 +41,11 @@ qualify-native-posterior:
 	uv run --no-sync python -c 'import jax, torch'
 	uv run --no-sync pytest tests/test_posterior_backends.py
 
+# Required statistical families: native imports fail rather than hiding skips.
+qualify-statistics:
+	uv run --no-sync python -c 'import jax, numpyro, torch'
+	uv run --no-sync pytest tests/test_priors.py tests/test_observe.py tests/test_statistical_backends.py tests/test_simulation.py src/op_infer/priors.py src/op_infer/observe.py
+
 # Task keys must replay on both real backends; missing extras fail this recipe.
 qualify-rng:
 	uv run --no-sync python -c 'import jax, torch'

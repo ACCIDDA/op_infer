@@ -15,9 +15,11 @@ define numerical ownership and measurement boundaries.
 2. Schema-2 structural identity now flows through existing guarded provenance;
    legacy schema-1 identities remain unchanged. Keep model structure separate
    from fitted values, numerical settings, prior/design and estimator identity.
-3. Implement one statistical observation object for sampling and log density, and
-   one declarative prior definition with native library lowerings. Reuse existing
-   parameter, prior and observation issues instead of creating parallel catalogs.
+3. The [shared statistical models](../statistical-models.md) now supply five
+   independent prior families, seven iid observation families, Normal censoring,
+   native lowerings and an identified forward-to-measurement composition. General
+   transforms, correlated/hierarchical priors, AR(1) and interval censoring remain
+   scoped extensions under the existing family issues.
 4. Require NumPy/JAX/CPU Torch family-specific support, parameterization, moments,
    log-density and derivative conformance before claiming interchangeability.
 5. Qualify complete JAX simulation-to-observation execution, bounded batches and

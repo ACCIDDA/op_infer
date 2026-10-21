@@ -65,3 +65,11 @@ See [implemented capabilities](capabilities.md) for the current scope and extras
 ## Saved gate records
 
 ::: op_infer.gates
+
+## Shared statistical models
+
+::: op_infer.priors
+
+::: op_infer.observe
+
+::: op_infer.simulation

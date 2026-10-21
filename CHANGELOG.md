@@ -23,6 +23,12 @@
 
 ### Added
 
+- Shared independent prior declarations and native lowerings, seven iid
+  observation laws with masks and Normal censoring, and an identified
+  forward-to-measurement composition with independent channel streams. Required
+  current/minimum CPU conformance checks cover densities, support, moments,
+  layouts, gradients and native JAX sampling transforms.
+
 - Identified forward protocol/callable adapter and an optional compiled fixed-step
   adapter using existing engine kernels and latent observations. Retain current
   state/FSAL plus selected outputs, with bounded setup, explicit native scan/JIT
