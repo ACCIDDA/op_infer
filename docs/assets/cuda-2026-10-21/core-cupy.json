@@ -1,0 +1,56 @@
+{
+  "backend": "cupy",
+  "cases": [
+    {
+      "dtype": "float32",
+      "first_seconds": 0.07300555799156427,
+      "history": false,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.022373345913365483
+    },
+    {
+      "dtype": "float32",
+      "first_seconds": 0.022847183048725128,
+      "history": true,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.022559684002771974
+    },
+    {
+      "dtype": "float64",
+      "first_seconds": 0.029491652036085725,
+      "history": false,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.022240766091272235
+    },
+    {
+      "dtype": "float64",
+      "first_seconds": 0.02261678408831358,
+      "history": true,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.02223053597845137
+    },
+    {
+      "phase": "statistics",
+      "status": "explicitly unsupported CuPy lowering"
+    }
+  ],
+  "device": "NVIDIA A100-SXM4-80GB",
+  "source_model": "sha256:af0c93f6b0f78b98d04d29853b5179c9dcf219450998ec59056179a4fa1af071",
+  "status": "passed",
+  "versions": {
+    "cupy-cuda12x": "14.2.0",
+    "numpy": "2.5.4",
+    "op-engine": "0.8.0",
+    "op-infer": "0.0.1",
+    "op-system": "0.9.0"
+  },
+  "whole_worker_peak_rss_bytes": 437850112
+}

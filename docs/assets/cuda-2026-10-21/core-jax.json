@@ -1,0 +1,182 @@
+{
+  "backend": "jax",
+  "cases": [
+    {
+      "dtype": "float32",
+      "first_seconds": 0.1283345720730722,
+      "history": false,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.00037651811726391315
+    },
+    {
+      "dtype": "float32",
+      "first_seconds": 0.14289568504318595,
+      "history": true,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.0003653180319815874
+    },
+    {
+      "dtype": "float64",
+      "first_seconds": 0.12369776307605207,
+      "history": false,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.0003901480231434107
+    },
+    {
+      "dtype": "float64",
+      "first_seconds": 0.1319631750229746,
+      "history": true,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.0003769479226320982
+    },
+    {
+      "dtype": "float64",
+      "family": "normal",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        0.2119447745786638,
+        0.5951799062495307
+      ],
+      "sample_variance": [
+        0.16170077659317875,
+        0.1577394110878954
+      ],
+      "sampling": "public native JAX sampling"
+    },
+    {
+      "dtype": "float64",
+      "family": "lognormal",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        1.3395666671407496,
+        1.9618633972273947
+      ],
+      "sample_variance": [
+        0.3102941535974804,
+        0.6564812607809539
+      ],
+      "sampling": "public native JAX sampling"
+    },
+    {
+      "dtype": "float64",
+      "family": "poisson",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        2.036376953125,
+        5.9990234375
+      ],
+      "sample_variance": [
+        2.1126903891563416,
+        6.094725608825684
+      ],
+      "sampling": "public native JAX sampling"
+    },
+    {
+      "dtype": "float64",
+      "family": "nb2",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        2.02490234375,
+        5.887939453125
+      ],
+      "sample_variance": [
+        3.344106435775757,
+        17.533585011959076
+      ],
+      "sampling": "public native JAX sampling"
+    },
+    {
+      "dtype": "float64",
+      "family": "binomial",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        0.9970703125,
+        3.003173828125
+      ],
+      "sample_variance": [
+        0.7807531356811523,
+        1.222890317440033
+      ],
+      "sampling": "public native JAX sampling"
+    },
+    {
+      "dtype": "float64",
+      "family": "beta_binomial",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        1.0048828125,
+        3.035400390625
+      ],
+      "sample_variance": [
+        1.6142339706420898,
+        2.3359050154685974
+      ],
+      "sampling": "public native JAX sampling"
+    },
+    {
+      "dtype": "float64",
+      "family": "bernoulli",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        0.34716796875,
+        0.62939453125
+      ],
+      "sample_variance": [
+        0.22664237022399902,
+        0.23325705528259277
+      ],
+      "sampling": "public native JAX sampling"
+    },
+    {
+      "family": "normal",
+      "phase": "prior-density",
+      "reference": "passed"
+    },
+    {
+      "family": "lognormal",
+      "phase": "prior-density",
+      "reference": "passed"
+    },
+    {
+      "family": "gamma",
+      "phase": "prior-density",
+      "reference": "passed"
+    },
+    {
+      "family": "beta",
+      "phase": "prior-density",
+      "reference": "passed"
+    },
+    {
+      "family": "uniform",
+      "phase": "prior-density",
+      "reference": "passed"
+    }
+  ],
+  "device": "NVIDIA A100-SXM4-80GB",
+  "source_model": "sha256:af0c93f6b0f78b98d04d29853b5179c9dcf219450998ec59056179a4fa1af071",
+  "status": "passed",
+  "versions": {
+    "jax": "0.12.0",
+    "numpy": "2.5.4",
+    "op-engine": "0.8.0",
+    "op-infer": "0.0.1",
+    "op-system": "0.9.0"
+  },
+  "whole_worker_peak_rss_bytes": 1129435136
+}

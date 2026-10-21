@@ -1,0 +1,379 @@
+{
+  "backend": "jax",
+  "cases": [
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "normal",
+      "reference_mean": [
+        0.2,
+        0.6
+      ],
+      "reference_variance": [
+        0.16,
+        0.16
+      ],
+      "sample_mean": [
+        0.20099139213562012,
+        0.5938104391098022
+      ],
+      "sample_variance": [
+        0.15833306312561035,
+        0.15994709730148315
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "normal",
+      "reference_mean": [
+        0.2,
+        0.6
+      ],
+      "reference_variance": [
+        0.16,
+        0.16
+      ],
+      "sample_mean": [
+        0.1994758798049559,
+        0.5987086614137875
+      ],
+      "sample_variance": [
+        0.15954085297892934,
+        0.16551665411459598
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "lognormal",
+      "reference_mean": [
+        1.3231298123374369,
+        1.9738777322304475
+      ],
+      "reference_variance": [
+        0.3037607103477867,
+        0.6760318933469445
+      ],
+      "sample_mean": [
+        1.3135141134262085,
+        1.9666763544082642
+      ],
+      "sample_variance": [
+        0.3074990212917328,
+        0.6962969303131104
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "lognormal",
+      "reference_mean": [
+        1.3231298123374369,
+        1.9738777322304475
+      ],
+      "reference_variance": [
+        0.3037607103477867,
+        0.6760318933469445
+      ],
+      "sample_mean": [
+        1.3293452400766024,
+        1.9723161319978175
+      ],
+      "sample_variance": [
+        0.30485687270526324,
+        0.6808844196023542
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "poisson",
+      "reference_mean": [
+        2.0,
+        6.0
+      ],
+      "reference_variance": [
+        2.0,
+        6.0
+      ],
+      "sample_mean": [
+        1.995849609375,
+        5.977783203125
+      ],
+      "sample_variance": [
+        1.9673712253570557,
+        5.951853275299072
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "poisson",
+      "reference_mean": [
+        2.0,
+        6.0
+      ],
+      "reference_variance": [
+        2.0,
+        6.0
+      ],
+      "sample_mean": [
+        1.997314453125,
+        6.052490234375
+      ],
+      "sample_variance": [
+        2.008781850337982,
+        6.145926415920258
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "nb2",
+      "reference_mean": [
+        2.0,
+        6.0
+      ],
+      "reference_variance": [
+        3.333333333333333,
+        18.0
+      ],
+      "sample_mean": [
+        1.9910888671875,
+        5.9837646484375
+      ],
+      "sample_variance": [
+        3.3372395038604736,
+        18.292072296142578
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "nb2",
+      "reference_mean": [
+        2.0,
+        6.0
+      ],
+      "reference_variance": [
+        3.333333333333333,
+        18.0
+      ],
+      "sample_mean": [
+        1.969970703125,
+        5.9595947265625
+      ],
+      "sample_variance": [
+        3.282057225704193,
+        18.34858714044094
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "binomial",
+      "reference_mean": [
+        1.0,
+        3.0
+      ],
+      "reference_variance": [
+        0.8,
+        1.2000000000000002
+      ],
+      "sample_mean": [
+        1.008056640625,
+        3.0145263671875
+      ],
+      "sample_variance": [
+        0.796529233455658,
+        1.216165542602539
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "binomial",
+      "reference_mean": [
+        1.0,
+        3.0
+      ],
+      "reference_variance": [
+        0.8,
+        1.2000000000000002
+      ],
+      "sample_mean": [
+        0.9927978515625,
+        3.0087890625
+      ],
+      "sample_variance": [
+        0.7993866056203842,
+        1.198164939880371
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "beta_binomial",
+      "reference_mean": [
+        1.0,
+        3.0
+      ],
+      "reference_variance": [
+        1.6,
+        2.4000000000000004
+      ],
+      "sample_mean": [
+        1.02294921875,
+        2.984130859375
+      ],
+      "sample_variance": [
+        1.6221843957901,
+        2.370635509490967
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "beta_binomial",
+      "reference_mean": [
+        1.0,
+        3.0
+      ],
+      "reference_variance": [
+        1.6,
+        2.4000000000000004
+      ],
+      "sample_mean": [
+        0.9775390625,
+        2.9893798828125
+      ],
+      "sample_variance": [
+        1.589339256286621,
+        2.4309174865484238
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "bernoulli",
+      "reference_mean": [
+        0.33999999999999997,
+        0.62
+      ],
+      "reference_variance": [
+        0.2244,
+        0.2356
+      ],
+      "sample_mean": [
+        0.3353271484375,
+        0.6207275390625
+      ],
+      "sample_variance": [
+        0.22287170588970184,
+        0.23540692031383514
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "bernoulli",
+      "reference_mean": [
+        0.33999999999999997,
+        0.62
+      ],
+      "reference_variance": [
+        0.2244,
+        0.2356
+      ],
+      "sample_mean": [
+        0.3372802734375,
+        0.631103515625
+      ],
+      "sample_variance": [
+        0.22352229058742523,
+        0.23281186819076538
+      ],
+      "samples": 8192
+    },
+    {
+      "density": "passed",
+      "dtype": "float32",
+      "prior_family": "normal"
+    },
+    {
+      "density": "passed",
+      "dtype": "float32",
+      "prior_family": "lognormal"
+    },
+    {
+      "density": "passed",
+      "dtype": "float32",
+      "prior_family": "gamma"
+    },
+    {
+      "density": "passed",
+      "dtype": "float32",
+      "prior_family": "beta"
+    },
+    {
+      "density": "passed",
+      "dtype": "float32",
+      "prior_family": "uniform"
+    },
+    {
+      "density": "passed",
+      "dtype": "float64",
+      "prior_family": "normal"
+    },
+    {
+      "density": "passed",
+      "dtype": "float64",
+      "prior_family": "lognormal"
+    },
+    {
+      "density": "passed",
+      "dtype": "float64",
+      "prior_family": "gamma"
+    },
+    {
+      "density": "passed",
+      "dtype": "float64",
+      "prior_family": "beta"
+    },
+    {
+      "density": "passed",
+      "dtype": "float64",
+      "prior_family": "uniform"
+    }
+  ],
+  "device": "NVIDIA A100-SXM4-80GB",
+  "fixture_sha256": "96d35f69a0555a77e1d95ed0dcee5637f7044959410ca3fff967caa1977f0dad",
+  "masked_censored_gradient": "passed",
+  "process_peak_rss_bytes": 1101668352,
+  "source_sha256": {
+    "IIDObservation": "729533fd2a294d935b69fb1528f4d9ccc3819cb9282f5fdedcd6ed384dd0a497",
+    "JointPrior": "7f4d2e3c157cb0a11cd08d105f0726c2da7ee142bff90f9b2a60047cb1d3755d",
+    "torch_generators": "67adb0339bdfe2aa12d6d48489ecf23fab401082920ee386500c084f1b5a2587"
+  },
+  "status": "passed",
+  "versions": {
+    "jax": "0.12.0",
+    "numpy": "2.5.4",
+    "op-infer": "0.0.1",
+    "scipy": "1.18.1"
+  }
+}
