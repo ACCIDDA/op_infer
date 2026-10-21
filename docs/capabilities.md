@@ -9,6 +9,7 @@ trade-study. No sampler, scoring-rule library or executor is reimplemented here.
 | --- | --- | --- |
 | Provenance and forward artifacts | `ArtifactReference`, `Provenance`, target/numerical references, `ForwardRunReference` | Content identity and guarded loading; metadata alone is not numerical qualification. |
 | Identified forward models | `ForwardModel`, `CallableForward`, `ForwardDesign`, optional `adapters.op.compiled_forward` | [Forward models](forward-models.md); schema-2 structural provenance, qualified fixed explicit CPU subset and observation-only retention. Legacy schema-1 identities remain unchanged. |
+| Statistical priors and observations | `JointPrior`, five scalar prior families, `IIDObservation`, `StatisticalModel` | [Shared statistical models](statistical-models.md); independent fixed-shaped priors, seven iid observation laws, Normal clipping/censoring, NumPy/JAX/CPU Torch scoring. General transforms/hierarchy/dependence remain planned. |
 | Native posterior containers | Named dimensions/coordinates, separate chain/seed semantics | [Posteriors](posteriors.md); optional `arviz` adds guarded ArviZ 1.x/netCDF snapshots. |
 | Random streams | `RandomKey`, `SimulationStreams`, native NumPy and optional JAX/Torch lowering | [Streams](random-streams.md); task addresses separate parameter and simulation randomness. |
 | Native NUTS | `adapters.numpyro.fit_nuts`, `NutsSettings` | `numpyro` extra; bounded CPU scope and raw diagnostics, not automatic adequacy certification. |
@@ -26,7 +27,8 @@ trade-study. No sampler, scoring-rule library or executor is reimplemented here.
 | Numerical likelihood/gradient checks | Provenance records and optional synthetic reference tests | [Numerical provenance](design/numerical-provenance.md); limited to declared references/backends and tolerances. |
 | flepimop2 workflows | Separate GPL `flepimop2-op_infer` process provider | Executes calibration/SBC/design plans; the MIT core never imports flepimop2. |
 
-Backend-neutral parameter/prior/observation catalogs, integrated unit likelihood
+General parameter/transform catalogs, correlated or hierarchical priors,
+AR(1)/general interval-censored observations, integrated unit likelihood
 algorithms, LOO/PSIS, automatic general gate qualification, Fisher/profile
 or structural identifiability, other estimator adapters and EVSI remain planned.
 The presence of an extra or a placeholder module is not an implemented interface.

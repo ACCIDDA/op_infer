@@ -151,6 +151,35 @@ jobs:
           UV_NO_SYNC: '1'
         run: 'just ci'
 
+  statistical-conformance:
+    name: 'Statistical families (${{ matrix.dependencies }}, CPU)'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      matrix:
+        dependencies: ['current', 'minimum']
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - uses: 'taiki-e/install-action@v2'
+        with:
+          tool: 'just'
+      - uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: '3.12'
+      - run: 'uv sync --dev --extra numpyro'
+      - if: "matrix.dependencies == 'current'"
+        run: "uv pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.6'"
+      - if: "matrix.dependencies == 'minimum'"
+        run: |
+          uv pip install --index-url https://download.pytorch.org/whl/cpu 'torch==2.6.0'
+          uv pip install 'numpy==2.0.0' 'scipy==1.13.0' 'array-api-compat==1.12.0' 'jax==0.4.36' 'numpyro==0.15.0'
+      - run: 'just qualify-statistics'
+
   numerical-reference:
     name: 'Numerical reference (CPU)'
     runs-on: 'ubuntu-latest'

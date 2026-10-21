@@ -28,6 +28,7 @@ nav:
   - Likelihood targets: design/likelihood-targets.md
   - Numerical provenance: design/numerical-provenance.md
   - Forward models: forward-models.md
+  - Priors and statistical observations: statistical-models.md
   - Posteriors: posteriors.md
   - Random streams: random-streams.md
   - Native NumPyro NUTS: numpyro.md
