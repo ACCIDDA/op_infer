@@ -191,7 +191,7 @@ def test_native_values_and_parameter_initial_gradients(
         )
 
 
-def test_bounded_jax_batch_reuses_trace_and_has_no_scan_history() -> None:
+def test_bounded_jax_batch_reuses_trace_and_has_no_state_history() -> None:
     """Two parameter/initial values share a compiled scan and return only outputs."""
     compiled, settings, expected = fixture(loop="scan", checkpoint=True)
     with backend("jax") as (xp, jax):
@@ -233,15 +233,17 @@ def test_bounded_jax_batch_reuses_trace_and_has_no_scan_history() -> None:
         graph = jax.make_jaxpr(values)(rates[0], initials[0])
         scans = [eq for eq in graph.jaxpr.eqns if eq.primitive.name == "scan"]
         assert len(scans) == 2
+        assert scans[0].outvars[0].aval.shape == (1, 1)
+        # Carry is the current state. Stacked outputs are scalar observations,
+        # never a trajectory with the original state/sample axes.
         assert all(
-            len(eq.outvars) == 1 and eq.outvars[0].aval.shape == (1, 1) for eq in scans
-        )
-        assert all(
-            any(
-                eq.primitive.name.startswith("remat")
-                for eq in scan.params["jaxpr"].jaxpr.eqns
-            )
+            variable.aval.shape in {(1, 1), (1,)}
             for scan in scans
+            for variable in scan.outvars
+        )
+        assert any(
+            eq.primitive.name.startswith("remat")
+            for eq in scans[0].params["jaxpr"].jaxpr.eqns
         )
         gradient = jax.jit(jax.grad(lambda rate: xp.sum(values(rate, initials[0]))))(
             rates[0]
@@ -476,3 +478,189 @@ def test_real_trade_study_simulator_and_guarded_checkpoint(tmp_path: Path) -> No
     ).identity
     with pytest.raises(ValueError, match="Incompatible grid checkpoint"):
         trade.run_grid(**arguments)
+
+
+@pytest.mark.parametrize("method", ["euler", "heun", "rk4", "dopri5"])
+def test_grouped_scan_keeps_ragged_mesh_and_time_observations(method: str) -> None:
+    """Irregular intervals preserve the eager discrete map and its gradients."""
+    compiled, original, expected = fixture(method=method, loop="scan")  # type: ignore[arg-type]
+    settings = FixedForwardSettings(
+        times=(0.0, 0.1, 0.35, 0.55, 0.85),
+        max_step=0.1,
+        method=original.method,
+        fixed_loop="scan",
+    )
+    assert expected.numerical is not None
+    numerical = expected.numerical.model_copy(
+        update={
+            "solver": fixed_forward_settings_reference(settings),
+            "time_mesh": fixed_forward_mesh_reference(settings),
+        }
+    )
+    expected = Provenance.model_validate(
+        {**expected.model_dump(), "numerical": numerical}
+    )
+    with backend("jax") as (xp, jax):
+        scanned = adapter(compiled, settings, expected, xp)
+        eager_settings = settings.model_copy(update={"fixed_loop": "unroll"})
+        eager_numerical = numerical.model_copy(
+            update={"solver": fixed_forward_settings_reference(eager_settings)}
+        )
+        eager_expected = Provenance.model_validate(
+            {**expected.model_dump(), "numerical": eager_numerical}
+        )
+        eager = adapter(compiled, eager_settings, eager_expected, xp)
+        design = ForwardDesign(expected.design, None)
+        key = RandomKey(seed=73, stream="simulation")
+
+        def values(forward: CallableForward, rate: Any) -> Any:  # noqa: ANN401
+            return forward(
+                {"rate": rate, "scale": xp.asarray(3.0), "initial": xp.asarray(2.0)},
+                design,
+                key,
+            )["value"]
+
+        parameter = xp.asarray(0.7)
+        np.testing.assert_allclose(
+            jax.jit(lambda r: values(scanned, r))(parameter),
+            values(eager, parameter),
+            rtol=1e-12,
+            atol=1e-12,
+        )
+        np.testing.assert_allclose(
+            jax.jit(jax.grad(lambda r: xp.sum(values(scanned, r))))(parameter),
+            jax.grad(lambda r: xp.sum(values(eager, r)))(parameter),
+            rtol=1e-12,
+            atol=1e-12,
+        )
+
+
+def test_uniform_output_grid_has_bounded_top_level_scan_count() -> None:
+    """Adding output times does not clone one differentiated solver per interval."""
+    compiled, _original, expected = fixture(loop="scan", checkpoint=True)
+    settings = FixedForwardSettings(
+        times=tuple(float(t) for t in np.linspace(0, 1, 17)),
+        max_step=1 / 64,
+        fixed_loop="scan",
+        checkpoint=True,
+    )
+    assert expected.numerical is not None
+    numerical = expected.numerical.model_copy(
+        update={
+            "solver": fixed_forward_settings_reference(settings),
+            "time_mesh": fixed_forward_mesh_reference(settings),
+        }
+    )
+    expected = Provenance.model_validate(
+        {**expected.model_dump(), "numerical": numerical}
+    )
+    with backend("jax") as (xp, jax):
+        forward = adapter(compiled, settings, expected, xp)
+        design = ForwardDesign(expected.design, None)
+        key = RandomKey(seed=73, stream="simulation")
+
+        def value(rate: Any) -> Any:  # noqa: ANN401
+            return forward(
+                {"rate": rate, "scale": xp.asarray(3.0), "initial": xp.asarray(2.0)},
+                design,
+                key,
+            )["value"]
+
+        graph = jax.make_jaxpr(value)(xp.asarray(0.7))
+        scans = [eq for eq in graph.jaxpr.eqns if eq.primitive.name == "scan"]
+        assert len(scans) == 2
+        result, gradient = jax.jit(jax.value_and_grad(lambda r: xp.sum(value(r))))(
+            xp.asarray(0.7)
+        )
+        times = np.asarray(settings.times)
+        np.testing.assert_allclose(
+            result, np.sum(6 * np.exp(-0.7 * times)), rtol=0, atol=3e-7
+        )
+        np.testing.assert_allclose(
+            gradient, -np.sum(6 * times * np.exp(-0.7 * times)), rtol=0, atol=3e-7
+        )
+
+
+@pytest.mark.parametrize("dtype", ["float32", "float64"])
+@pytest.mark.parametrize("checkpoint", [False, True])
+def test_grouped_scan_preserves_vector_observables_and_dynamic_time(
+    *, checkpoint: bool, dtype: Literal["float32", "float64"]
+) -> None:
+    """A clock-dependent vector output retains its declared spatial shape and AD."""
+    compiler = pytest.importorskip("op_system")
+    compiled = compiler.compile_spec(
+        {
+            "kind": "expr",
+            "axes": [{"name": "site", "coords": ["a", "b"]}],
+            "state": ["x[site]"],
+            "equations": {"x[site]": "-rate*x[site]"},
+            "observables": {"value": {"expr": "scale*x[site]+t", "axes": ["site"]}},
+        }
+    )
+    _, _, expected = fixture(loop="scan")
+    settings = FixedForwardSettings(
+        times=tuple(float(t) for t in np.linspace(0, 1, 9)),
+        max_step=1 / 32,
+        fixed_loop="scan",
+        checkpoint=checkpoint,
+        dtype=dtype,
+    )
+    assert expected.numerical is not None
+    numerical = expected.numerical.model_copy(
+        update={
+            "solver": fixed_forward_settings_reference(settings),
+            "time_mesh": fixed_forward_mesh_reference(settings),
+            "observation": compiled_observation_reference(compiled, ("value",)),
+        }
+    )
+    expected = Provenance.model_validate(
+        {
+            **expected.model_dump(),
+            "structural_model": structural_model_reference(compiled),
+            "numerical": numerical,
+        }
+    )
+    with backend("jax") as (xp, jax):
+
+        def initial(theta: Mapping[str, object], _design: object) -> object:
+            value: Any = theta["initial"]
+            return xp.stack((value, 2 * value))
+
+        forward = compiled_forward(
+            compiled,
+            settings=settings,
+            initial_state=initial,
+            parameter_names=("rate", "scale", "initial"),
+            output_names=("value",),
+            provenance=expected,
+        )
+
+        def values(rate: Any) -> Any:  # noqa: ANN401
+            return forward(
+                {
+                    "rate": rate,
+                    "scale": xp.asarray(3.0, dtype=getattr(xp, dtype)),
+                    "initial": xp.asarray(1.0, dtype=getattr(xp, dtype)),
+                },
+                ForwardDesign(expected.design, None),
+                RandomKey(seed=73, stream="simulation"),
+            )["value"]
+
+        times = np.asarray(settings.times)
+        actual = jax.jit(values)(xp.asarray(0.7, dtype=getattr(xp, dtype)))
+        np.testing.assert_allclose(
+            actual,
+            3 * np.array([1.0, 2.0])[None, :] * np.exp(-0.7 * times[:, None])
+            + times[:, None],
+            rtol=0,
+            atol=2e-5 if dtype == "float32" else 3e-7,
+        )
+        gradient = jax.jit(jax.grad(lambda r: xp.sum(values(r))))(
+            xp.asarray(0.7, dtype=getattr(xp, dtype))
+        )
+        np.testing.assert_allclose(
+            gradient,
+            -9 * np.sum(times * np.exp(-0.7 * times)),
+            rtol=0,
+            atol=2e-5 if dtype == "float32" else 3e-7,
+        )

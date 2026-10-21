@@ -9,6 +9,12 @@
 
 ### Fixed
 
+- Group equal-length fixed-forward observation intervals in nested native scans,
+  reducing repeated JAX tracing without stacking primal state history. Preserve
+  eager kernels, meshes, checkpoint/FSAL behavior and time-dependent/vector
+  output contracts; retain a complete CPU pipeline comparison with censored
+  baseline attempts and distinct process/XLA memory records.
+
 - Reject invalid rank/gate configuration before labels or statistics.
   Single-bin tests and NaN thresholds previously allowed false passes. Validate
   integer bin/power/flag counts and finite probabilities, check settings when
