@@ -329,55 +329,129 @@ def compiled_forward(  # noqa: C901, PLR0913, PLR0915 - static binding and one n
                 (size, 1),
             )
 
-        output_values: dict[str, list[object]] = {name: [] for name in output_names}
+        observation_params = {name: theta[name] for name in required}
 
-        def observe(time: float, current: object) -> None:
-            result = observations.observe_solution(
-                (time,),
-                xp.expand_dims(current, axis=0),
-                specs,
-                params={name: theta[name] for name in required},
+        def observe(time: object, current: object) -> tuple[object, ...]:
+            values = []
+            for spec in specs:
+                value = spec.eval_fn(time, current, **observation_params)
+                if (
+                    array_namespace(value) is not xp
+                    or getattr(value, "dtype", None) != state.dtype
+                ):
+                    msg = (
+                        "Compiled observations must preserve native namespace and dtype"
+                    )
+                    raise TypeError(msg)
+                if getattr(value, "shape", None) != spec.metadata.output_shape:
+                    msg = "Compiled observation shape differs from its metadata"
+                    raise ValueError(msg)
+                values.append(value)
+            return tuple(values)
+
+        def advance(carry: Any, step: Any) -> tuple[Any, None]:  # noqa: ANN401
+            values, first_stage = carry
+            time, dt = step
+            next_values, next_stage = solver.fixed_explicit_step(
+                rhs,
+                method=settings.method,
+                t=time,
+                dt=dt,
+                y=values,
+                first_stage=first_stage,
             )
-            for name in output_names:
-                output_values[name].append(result.series[name].values[0])
+            return (next_values, next_stage), None
 
-        observe(settings.times[0], state)
-        cached = None
-        for (start, end), steps in zip(
-            pairwise(settings.times), partitions, strict=True
-        ):
-            starts = tuple(accumulate(steps, initial=start))[:-1]
-
-            def advance(carry: Any, step: Any) -> tuple[Any, None]:  # noqa: ANN401 - native scan pytrees
-                values, first_stage = carry
-                time, dt = step
-                next_values, next_stage = solver.fixed_explicit_step(
-                    rhs,
-                    method=settings.method,
-                    t=time,
-                    dt=dt,
-                    y=values,
-                    first_stage=first_stage,
-                )
-                return (next_values, next_stage), None
-
-            if adapter is None:
+        if adapter is not None:
+            body = adapter.checkpoint(advance) if settings.checkpoint else advance
+            outputs = _scan_outputs(
+                adapter,
+                xp,
+                body,
+                (state, None),
+                times=settings.times,
+                partitions=partitions,
+                observe=observe,
+            )
+        else:
+            rows = [[value] for value in observe(settings.times[0], state)]
+            carry = (state, None)
+            for (start, end), steps in zip(
+                pairwise(settings.times), partitions, strict=True
+            ):
+                starts = tuple(accumulate(steps, initial=start))[:-1]
                 for time, dt in zip(starts, steps, strict=True):
-                    (state, cached), _ = advance((state, cached), (time, dt))
-            else:
-                body = adapter.checkpoint(advance) if settings.checkpoint else advance
-                (state, cached), _ = body((state, cached), (starts[0], steps[0]))
-                (state, cached), _ = adapter.scan(
-                    body,
-                    (state, cached),
-                    (
-                        xp.asarray(starts[1:], dtype=state.dtype),
-                        xp.asarray(steps[1:], dtype=state.dtype),
-                    ),
-                )
-            observe(end, state)
-        return {
-            name: xp.stack(values, axis=0) for name, values in output_values.items()
-        }
+                    carry, _ = advance(carry, (time, dt))
+                for row, value in zip(rows, observe(end, carry[0]), strict=True):
+                    row.append(value)
+            outputs = tuple(xp.stack(row, axis=0) for row in rows)
+        return dict(zip(output_names, outputs, strict=True))
 
     return CallableForward(evaluate, parameter_names, output_names, provenance)
+
+
+def _scan_outputs(  # noqa: PLR0913 -- native driver and static observation plan
+    adapter: Any,  # noqa: ANN401
+    xp: Any,  # noqa: ANN401
+    body: Any,  # noqa: ANN401
+    carry: Any,  # noqa: ANN401
+    *,
+    times: tuple[float, ...],
+    partitions: tuple[tuple[float, ...], ...],
+    observe: Callable[[object, object], tuple[object, ...]],
+) -> tuple[object, ...]:
+    """Scan equal-length observation intervals without stacking primal states.
+
+    One bootstrap step establishes DOPRI5's FSAL carry type. Subsequent groups
+    share an outer observation scan and inner step scan; ragged interval lengths
+    start a new group. Only requested observations are scan outputs.
+    """
+    initial = observe(times[0], carry[0])
+    chunks = [tuple(xp.expand_dims(value, axis=0) for value in initial)]
+    if not partitions:
+        return chunks[0]
+    first = partitions[0]
+    starts = tuple(accumulate(first, initial=times[0]))[:-1]
+    carry, _ = body(carry, (starts[0], first[0]))
+    carry, _ = adapter.scan(
+        body,
+        carry,
+        (
+            xp.asarray(starts[1:], dtype=carry[0].dtype),
+            xp.asarray(first[1:], dtype=carry[0].dtype),
+        ),
+    )
+    chunks.append(
+        tuple(xp.expand_dims(value, axis=0) for value in observe(times[1], carry[0]))
+    )
+    begin = 1
+    while begin < len(partitions):
+        stop = begin + 1
+        count = len(partitions[begin])
+        while stop < len(partitions) and len(partitions[stop]) == count:
+            stop += 1
+        step_starts = tuple(
+            tuple(accumulate(steps, initial=times[index]))[:-1]
+            for index, steps in enumerate(partitions[begin:stop], start=begin)
+        )
+
+        def interval(current: Any, inputs: Any) -> tuple[Any, tuple[object, ...]]:  # noqa: ANN401
+            step_times, sizes, end = inputs
+            current, _ = adapter.scan(body, current, (step_times, sizes))
+            return current, observe(end, current[0])
+
+        carry, output = adapter.scan(
+            interval,
+            carry,
+            (
+                xp.asarray(step_starts, dtype=carry[0].dtype),
+                xp.asarray(partitions[begin:stop], dtype=carry[0].dtype),
+                xp.asarray(times[begin + 1 : stop + 1], dtype=carry[0].dtype),
+            ),
+        )
+        chunks.append(output)
+        begin = stop
+    return tuple(
+        xp.concat(tuple(chunk[index] for chunk in chunks), axis=0)
+        for index in range(len(initial))
+    )

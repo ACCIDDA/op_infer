@@ -45,7 +45,10 @@ there is no temporal interpolation or added weighting/noise. The engine's
 existing observation adapter retains compiled output shapes, coordinates and
 physical measures.
 
-The driver carries current state/FSAL and stores observations. Its scan body has
+The driver carries current state/FSAL and stores observations. Consecutive output
+intervals with equal step counts share nested scans; ragged lengths start another
+group. A bootstrap establishes the FSAL carry before grouped execution. See the
+[bounded pipeline comparison](pipeline-performance.md) for measurements. Its inner step scan has
 no stacked state-history output. Storage for results still scales with requested
 outputs; reverse-mode AD can retain additional residuals. Checkpointing is an
 option, not a guaranteed application memory reduction. The qualified CPU cases
