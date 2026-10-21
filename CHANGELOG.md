@@ -2,6 +2,13 @@
 
 ## 0.0.1 (unreleased)
 
+### Added
+
+- Add explicit device-local Torch CUDA RNG lowering and float32/64 observation
+  sampling while retaining CPU stream derivation and local-generator semantics.
+  Publish actual A100 JAX/Torch statistical qualification with independent
+  density, moment, masked/censored-gradient, replay and RNG-state checks.
+
 ### Documentation
 
 - Record forward/provenance, shared prior/observation, backend and scoped

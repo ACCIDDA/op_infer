@@ -89,7 +89,7 @@ assert terms.shape == latent.shape
 ```
 
 NumPy uses SciPy laws, JAX uses NumPyro and native JAX keys, and Torch uses local
-CPU generators. Gamma-Poisson/beta-binomial Torch draws use Torch's native Gamma
+CPU or device-matched CUDA generators. Gamma-Poisson/beta-binomial Torch draws use Torch's native Gamma
 primitive with an explicit generator; that private primitive is covered at the
 required Torch dependency floor and current version. No global RNG state is
 seeded or consumed. JAX keys can be dynamic inputs to jitted/vmapped sampling;
@@ -127,8 +127,10 @@ uv pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.6'
 just qualify-statistics
 ```
 
-CPU results do not qualify CuPy/CUDA or other devices. Full pipeline memory and
-application performance remain separately measured work.
+The [separate A100 qualification](cuda-qualification.md) covers scoped JAX/Torch
+CUDA densities, sampling and gradients at float32/64. CuPy statistical lowering
+remains explicitly unsupported. [CPU pipeline timing and memory](pipeline-performance.md)
+and application performance have separate evidence requirements.
 
 References: [SciPy distributions](https://docs.scipy.org/doc/scipy/reference/stats.html),
 [NumPyro distributions](https://num.pyro.ai/en/latest/distributions.html),

@@ -1,0 +1,381 @@
+{
+  "backend": "torch",
+  "cases": [
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "normal",
+      "reference_mean": [
+        0.2,
+        0.6
+      ],
+      "reference_variance": [
+        0.16,
+        0.16
+      ],
+      "sample_mean": [
+        0.20422396063804626,
+        0.603644847869873
+      ],
+      "sample_variance": [
+        0.16318349540233612,
+        0.1604497730731964
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "normal",
+      "reference_mean": [
+        0.2,
+        0.6
+      ],
+      "reference_variance": [
+        0.16,
+        0.16
+      ],
+      "sample_mean": [
+        0.20136114594832913,
+        0.6072925748246418
+      ],
+      "sample_variance": [
+        0.1660345105414976,
+        0.1615455080574215
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "lognormal",
+      "reference_mean": [
+        1.3231298123374369,
+        1.9738777322304475
+      ],
+      "reference_variance": [
+        0.3037607103477867,
+        0.6760318933469445
+      ],
+      "sample_mean": [
+        1.3229358196258545,
+        1.964229702949524
+      ],
+      "sample_variance": [
+        0.3141700327396393,
+        0.6711304187774658
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "lognormal",
+      "reference_mean": [
+        1.3231298123374369,
+        1.9738777322304475
+      ],
+      "reference_variance": [
+        0.3037607103477867,
+        0.6760318933469445
+      ],
+      "sample_mean": [
+        1.3173778752465053,
+        1.9814084485262897
+      ],
+      "sample_variance": [
+        0.30965441511000513,
+        0.6832565279006252
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "poisson",
+      "reference_mean": [
+        2.0,
+        6.0
+      ],
+      "reference_variance": [
+        2.0,
+        6.0
+      ],
+      "sample_mean": [
+        1.9923095703125,
+        6.0107421875
+      ],
+      "sample_variance": [
+        1.9785948991775513,
+        6.142448902130127
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "poisson",
+      "reference_mean": [
+        2.0,
+        6.0
+      ],
+      "reference_variance": [
+        2.0,
+        6.0
+      ],
+      "sample_mean": [
+        2.00732421875,
+        5.9998779296875
+      ],
+      "sample_variance": [
+        2.004829168319702,
+        5.923950180411339
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "nb2",
+      "reference_mean": [
+        2.0,
+        6.0
+      ],
+      "reference_variance": [
+        3.333333333333333,
+        18.0
+      ],
+      "sample_mean": [
+        2.030029296875,
+        6.00390625
+      ],
+      "sample_variance": [
+        3.4476959705352783,
+        17.543006896972656
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "nb2",
+      "reference_mean": [
+        2.0,
+        6.0
+      ],
+      "reference_variance": [
+        3.333333333333333,
+        18.0
+      ],
+      "sample_mean": [
+        2.0006103515625,
+        5.9656982421875
+      ],
+      "sample_variance": [
+        3.36193810403347,
+        17.484541162848473
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "binomial",
+      "reference_mean": [
+        1.0,
+        3.0
+      ],
+      "reference_variance": [
+        0.8,
+        1.2000000000000002
+      ],
+      "sample_mean": [
+        1.0047607421875,
+        2.997314453125
+      ],
+      "sample_variance": [
+        0.7996883988380432,
+        1.1985121965408325
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "binomial",
+      "reference_mean": [
+        1.0,
+        3.0
+      ],
+      "reference_variance": [
+        0.8,
+        1.2000000000000002
+      ],
+      "sample_mean": [
+        0.99462890625,
+        3.016845703125
+      ],
+      "sample_variance": [
+        0.7841508388519287,
+        1.1979584097862244
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "beta_binomial",
+      "reference_mean": [
+        1.0,
+        3.0
+      ],
+      "reference_variance": [
+        1.6,
+        2.4000000000000004
+      ],
+      "sample_mean": [
+        1.0106201171875,
+        2.98046875
+      ],
+      "sample_variance": [
+        1.6142737865447998,
+        2.4295976161956787
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "beta_binomial",
+      "reference_mean": [
+        1.0,
+        3.0
+      ],
+      "reference_variance": [
+        1.6,
+        2.4000000000000004
+      ],
+      "sample_mean": [
+        0.995849609375,
+        2.9793701171875
+      ],
+      "sample_variance": [
+        1.59446519613266,
+        2.4057023376226425
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float32",
+      "family": "bernoulli",
+      "reference_mean": [
+        0.33999999999999997,
+        0.62
+      ],
+      "reference_variance": [
+        0.2244,
+        0.2356
+      ],
+      "sample_mean": [
+        0.3367919921875,
+        0.6268310546875
+      ],
+      "sample_variance": [
+        0.22334587574005127,
+        0.23393313586711884
+      ],
+      "samples": 8192
+    },
+    {
+      "density_and_replay": "passed",
+      "dtype": "float64",
+      "family": "bernoulli",
+      "reference_mean": [
+        0.33999999999999997,
+        0.62
+      ],
+      "reference_variance": [
+        0.2244,
+        0.2356
+      ],
+      "sample_mean": [
+        0.332763671875,
+        0.622802734375
+      ],
+      "sample_variance": [
+        0.22203201055526733,
+        0.2349194884300232
+      ],
+      "samples": 8192
+    },
+    {
+      "density": "passed",
+      "dtype": "float32",
+      "prior_family": "normal"
+    },
+    {
+      "density": "passed",
+      "dtype": "float32",
+      "prior_family": "lognormal"
+    },
+    {
+      "density": "passed",
+      "dtype": "float32",
+      "prior_family": "gamma"
+    },
+    {
+      "density": "passed",
+      "dtype": "float32",
+      "prior_family": "beta"
+    },
+    {
+      "density": "passed",
+      "dtype": "float32",
+      "prior_family": "uniform"
+    },
+    {
+      "density": "passed",
+      "dtype": "float64",
+      "prior_family": "normal"
+    },
+    {
+      "density": "passed",
+      "dtype": "float64",
+      "prior_family": "lognormal"
+    },
+    {
+      "density": "passed",
+      "dtype": "float64",
+      "prior_family": "gamma"
+    },
+    {
+      "density": "passed",
+      "dtype": "float64",
+      "prior_family": "beta"
+    },
+    {
+      "density": "passed",
+      "dtype": "float64",
+      "prior_family": "uniform"
+    }
+  ],
+  "device": "NVIDIA A100-SXM4-80GB",
+  "device_peak_allocated_bytes": 788480,
+  "device_peak_reserved_bytes": 2097152,
+  "fixture_sha256": "96d35f69a0555a77e1d95ed0dcee5637f7044959410ca3fff967caa1977f0dad",
+  "masked_censored_gradient": "passed",
+  "process_peak_rss_bytes": 1314344960,
+  "source_sha256": {
+    "IIDObservation": "729533fd2a294d935b69fb1528f4d9ccc3819cb9282f5fdedcd6ed384dd0a497",
+    "JointPrior": "7f4d2e3c157cb0a11cd08d105f0726c2da7ee142bff90f9b2a60047cb1d3755d",
+    "torch_generators": "67adb0339bdfe2aa12d6d48489ecf23fab401082920ee386500c084f1b5a2587"
+  },
+  "status": "passed",
+  "versions": {
+    "numpy": "2.5.4",
+    "op-infer": "0.0.1",
+    "scipy": "1.18.1",
+    "torch": "2.14.1"
+  }
+}

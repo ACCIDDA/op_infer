@@ -123,3 +123,16 @@ def test_torch_rejects_real_effective_seed_collision() -> None:
     with pytest.raises(ValueError, match="effective seeds collide"):
         torch_generators(keys)
     assert torch.equal(before, torch.get_rng_state())
+
+
+def test_torch_explicit_cpu_device_keeps_existing_addressed_stream() -> None:
+    """The optional device argument preserves the established CPU seed lowering."""
+    torch = pytest.importorskip("torch")
+    keys = (RandomKey(seed=2026, stream="simulation", index=8),)
+    default = torch_generators(keys)[0]
+    explicit = torch_generators(keys, device=torch.device("cpu"))[0]
+    assert torch.equal(
+        torch.randn(16, generator=default), torch.randn(16, generator=explicit)
+    )
+    with pytest.raises(ValueError, match="CPU and CUDA"):
+        torch_generators((), device="meta")

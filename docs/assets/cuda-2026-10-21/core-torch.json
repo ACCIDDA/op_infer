@@ -1,0 +1,182 @@
+{
+  "backend": "torch",
+  "cases": [
+    {
+      "dtype": "float32",
+      "first_seconds": 0.07329683820717037,
+      "history": false,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.018437492894008756
+    },
+    {
+      "dtype": "float32",
+      "first_seconds": 0.01896685198880732,
+      "history": true,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.018245175015181303
+    },
+    {
+      "dtype": "float64",
+      "first_seconds": 0.01846433407627046,
+      "history": false,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.018260963959619403
+    },
+    {
+      "dtype": "float64",
+      "first_seconds": 0.018615853041410446,
+      "history": true,
+      "native_device_and_reference": "passed",
+      "phase": "compiler-derivatives-and-rk4",
+      "steps": 32,
+      "warm_seconds": 0.018496574135497212
+    },
+    {
+      "dtype": "float64",
+      "family": "normal",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        0.19344085925585477,
+        0.6118440435233099
+      ],
+      "sample_variance": [
+        0.1568728592648959,
+        0.1603766474669215
+      ],
+      "sampling": "native CUDA primitive candidate only; public API explicitly refuses CUDA"
+    },
+    {
+      "dtype": "float64",
+      "family": "lognormal",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        1.3122061862588812,
+        1.9971539671257192
+      ],
+      "sample_variance": [
+        0.2911148714478859,
+        0.6858762726638103
+      ],
+      "sampling": "native CUDA primitive candidate only; public API explicitly refuses CUDA"
+    },
+    {
+      "dtype": "float64",
+      "family": "poisson",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        2.029296875,
+        6.013671875
+      ],
+      "sample_variance": [
+        2.0660362243652344,
+        6.080867767333984
+      ],
+      "sampling": "native CUDA primitive candidate only; public API explicitly refuses CUDA"
+    },
+    {
+      "dtype": "float64",
+      "family": "nb2",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        1.969970703125,
+        5.955810546875
+      ],
+      "sample_variance": [
+        3.344068944454193,
+        17.927490651607513
+      ],
+      "sampling": "native CUDA primitive candidate only; public API explicitly refuses CUDA"
+    },
+    {
+      "dtype": "float64",
+      "family": "binomial",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        1.004638671875,
+        3.004150390625
+      ],
+      "sample_variance": [
+        0.8083280920982361,
+        1.21946519613266
+      ],
+      "sampling": "native CUDA primitive candidate only; public API explicitly refuses CUDA"
+    },
+    {
+      "dtype": "float64",
+      "family": "beta_binomial",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        0.997802734375,
+        3.026611328125
+      ],
+      "sample_variance": [
+        1.5402783751487732,
+        2.3359617590904236
+      ],
+      "sampling": "native CUDA primitive candidate only; public API explicitly refuses CUDA"
+    },
+    {
+      "dtype": "float64",
+      "family": "bernoulli",
+      "log_density_reference": "passed",
+      "phase": "statistical-family",
+      "sample_mean": [
+        0.3466796875,
+        0.615234375
+      ],
+      "sample_variance": [
+        0.22649288177490234,
+        0.23672103881835938
+      ],
+      "sampling": "native CUDA primitive candidate only; public API explicitly refuses CUDA"
+    },
+    {
+      "family": "normal",
+      "phase": "prior-density",
+      "reference": "passed"
+    },
+    {
+      "family": "lognormal",
+      "phase": "prior-density",
+      "reference": "passed"
+    },
+    {
+      "family": "gamma",
+      "phase": "prior-density",
+      "reference": "passed"
+    },
+    {
+      "family": "beta",
+      "phase": "prior-density",
+      "reference": "passed"
+    },
+    {
+      "family": "uniform",
+      "phase": "prior-density",
+      "reference": "passed"
+    }
+  ],
+  "device": "NVIDIA A100-SXM4-80GB",
+  "source_model": "sha256:af0c93f6b0f78b98d04d29853b5179c9dcf219450998ec59056179a4fa1af071",
+  "status": "passed",
+  "versions": {
+    "numpy": "2.5.4",
+    "op-engine": "0.8.0",
+    "op-infer": "0.0.1",
+    "op-system": "0.9.0",
+    "torch": "2.14.1"
+  },
+  "whole_worker_peak_rss_bytes": 1291808768
+}

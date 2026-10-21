@@ -79,7 +79,11 @@ Host address parsing/SeedSequence construction happens before tracing. Sampling 
 uses ordinary native JAX operations; dynamically traced task counters are not accepted
 by the host metadata API. The CPU tests qualify native JIT/vmap key inputs and replay.
 
-Torch lowering currently supplies **CPU generators only**. Its native CPU MT19937
+Torch lowering defaults to **CPU generators**, preserving existing streams. Pass
+`device="cuda:0"` for device-local CUDA generators. Observation sampling also
+accepts a device-matched native generator; a mismatched device fails explicitly.
+The [CUDA qualification](cuda-qualification.md) covers actual A100 execution.
+Its native CPU MT19937
 initialization has 32 effective seed bits: a qualification reproduction with Torch
 2.14.1 shows `manual_seed(123)` and `manual_seed(123 + 2**32)` generate identical draws.
 The adapter therefore uses an explicitly 32-bit seed and checks its complete supplied
@@ -93,8 +97,10 @@ The regression fixture contains a real collision: root seed `2026`,
 namespace for the complete bank before evaluating it; the library does not silently
 remap a collided task. Separate calls cannot detect collisions with previous banks.
 For a study that needs all tasks independent, validate them together before splitting
-work across workers. GPU lowering and large/distributed bank management remain outside
-this CPU interface. A deterministic finite test is not a statistical independence
+work across workers. Version 1 conservatively retains the same 32-bit effective
+seed mapping and collision check on CUDA; it does not use CUDA's wider seed space
+to change existing task addresses. Large/distributed bank management remains
+separate. A deterministic finite test is not a statistical independence
 certificate, and finite backend key spaces cannot offer unlimited distinct streams.
 
 ## Version 1 derivation and reproducibility
@@ -104,7 +110,7 @@ certificate, and finite backend key spaces cannot offer unlimited distinct strea
 2. Create NumPy `SeedSequence(seed, pool_size=4)` with explicit spawn path
    `(0x4F504931, *stream_words, index_low32, index_high32)`.
 3. NumPy uses the named `PCG64DXSM` bit generator. JAX wraps the first two generated
-   uint32 state words as a typed Threefry key. Torch CPU uses the first uint32 word,
+   uint32 state words as a typed Threefry key. Torch uses the first uint32 word,
    subject to the complete-bank collision check.
 
 Both halves of the index and all root-seed bits participate before backend key-width

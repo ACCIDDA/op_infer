@@ -315,9 +315,9 @@ class IIDObservation(_Record):
         """Draw native measurements; RandomKey lowering happens outside tracing.
 
         JAX accepts a native key for jitted/vmapped sampling. Torch accepts a
-        local CPU Generator; RandomKey creates one without seeding global state.
-        This first qualification is CPU only. Returned counts use latent float
-        dtype, matching native Torch count distributions.
+        local device-matched Generator; RandomKey creates one without seeding
+        global state. Scoped Torch CUDA sampling uses float32/64. Returned counts
+        use latent float dtype, matching native Torch count distributions.
         """
         _validate_sample_shape(sample_shape)
         xp = array_namespace(latent)
@@ -347,11 +347,22 @@ class IIDObservation(_Record):
         else:
             from op_infer.adapters.rng import torch_generators  # noqa: PLC0415
 
+            if latent.device.type not in {"cpu", "cuda"}:
+                msg = "Observation Torch sampling is qualified only on CPU and CUDA"
+                raise ValueError(msg)
+            if latent.device.type == "cuda" and latent.dtype not in {
+                xp.float32,
+                xp.float64,
+            }:
+                msg = "CUDA observation sampling requires float32 or float64"
+                raise TypeError(msg)
             generator = (
-                torch_generators((key,))[0] if isinstance(key, RandomKey) else key
+                torch_generators((key,), device=latent.device)[0]
+                if isinstance(key, RandomKey)
+                else key
             )
-            if latent.device.type != "cpu":
-                msg = "Observation Torch sampling is qualified only on CPU"
+            if getattr(generator, "device", None) != latent.device:
+                msg = "Torch observation generator device must match the latent device"
                 raise ValueError(msg)
             result = self._torch_sample(mean, generator, shape)
         if self.lower_limit is not None:
