@@ -62,7 +62,7 @@ def test_complete_simulation_and_likelihood_share_one_target() -> None:
     )
     np.testing.assert_array_equal(
         _array(run.measurements["sensor"]),
-        model.sample_numpy(design, streams).measurements["sensor"],
+        _array(model.sample_numpy(design, streams).measurements["sensor"]),
     )
     assert not np.array_equal(
         _array(run.latent["signal"]), _array(run.measurements["sensor"])
