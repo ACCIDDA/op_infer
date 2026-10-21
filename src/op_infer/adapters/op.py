@@ -129,7 +129,14 @@ def structural_model_reference(compiled: object) -> ArtifactReference:
     Returns:
         Existing generic artifact reference, not a second model identity scheme.
     """
-    identity, *_ = _modules()
+    try:
+        identity = importlib.import_module("op_system.identity")
+    except ImportError as error:
+        msg = (
+            "Install the op extra with an op_system revision "
+            "providing structural identity"
+        )
+        raise ImportError(msg) from error
     reference = identity.StructuralModelIdentity.from_compiled(compiled)
     return ArtifactReference(
         kind=f"op-system-structural-model-v{reference.schema_version}",

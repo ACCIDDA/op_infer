@@ -10,6 +10,7 @@ trade-study. No sampler, scoring-rule library or executor is reimplemented here.
 | Provenance and forward artifacts | `ArtifactReference`, `Provenance`, target/numerical references, `ForwardRunReference` | Content identity and guarded loading; metadata alone is not numerical qualification. |
 | Identified forward models | `ForwardModel`, `CallableForward`, `ForwardDesign`, optional `adapters.op.compiled_forward` | [Forward models](forward-models.md); schema-2 structural provenance, qualified fixed explicit CPU subset and observation-only retention. Legacy schema-1 identities remain unchanged. |
 | Statistical priors and observations | `JointPrior`, five scalar prior families, `IIDObservation`, `StatisticalModel` | [Shared statistical models](statistical-models.md); independent fixed-shaped priors, seven iid observation laws, Normal clipping/censoring, NumPy/JAX/Torch scoring and [scoped CUDA qualification](cuda-qualification.md). General transforms/hierarchy/dependence remain planned. |
+| Structural/local information interoperability | `ScalingAssessment`, `InformationContext`, native Gaussian mean information and optional engine adapters | [Scoped reports](identifiability.md); physical coordinates, fixed independent Gaussian variance, explicit initial/measurement derivatives and local spectra. General structural identification and posterior geometry remain separate. |
 | Fixed-forward execution baseline | Grouped observation-interval scans and a fresh-process CPU pipeline harness | [Pipeline measurements](pipeline-performance.md); 60 successful grouped workers, separate compilation/warm/process/XLA memory, retained baseline censoring; no training/GPU claim. |
 | Native posterior containers | Named dimensions/coordinates, separate chain/seed semantics | [Posteriors](posteriors.md); optional `arviz` adds guarded ArviZ 1.x/netCDF snapshots. |
 | Random streams | `RandomKey`, `SimulationStreams`, native NumPy and optional JAX/Torch lowering | [Streams](random-streams.md); task addresses separate parameter and simulation randomness. |
@@ -30,8 +31,8 @@ trade-study. No sampler, scoring-rule library or executor is reimplemented here.
 
 General parameter/transform catalogs, correlated or hierarchical priors,
 AR(1)/general interval-censored observations, integrated unit likelihood
-algorithms, LOO/PSIS, automatic general gate qualification, Fisher/profile
-or structural identifiability, other estimator adapters and EVSI remain planned.
+algorithms, LOO/PSIS, automatic general gate qualification, general Fisher/profile
+or general structural identifiability, other estimator adapters and EVSI remain planned.
 The presence of an extra or a placeholder module is not an implemented interface.
 
 ## Run an analytic SBC bank

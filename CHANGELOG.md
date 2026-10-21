@@ -4,6 +4,11 @@
 
 ### Added
 
+- Consume existing compiler scaling reports and engine measured sensitivities in
+  scoped physical-coordinate information contexts. Add native masked Gaussian
+  mean information and explicit host spectra with source/layout and rank guards;
+  preserve unavailable structural statuses and separate general inference scopes.
+
 - Add explicit device-local Torch CUDA RNG lowering and float32/64 observation
   sampling while retaining CPU stream derivation and local-generator semantics.
   Publish actual A100 JAX/Torch statistical qualification with independent

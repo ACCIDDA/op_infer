@@ -1,14 +1,30 @@
-"""Identifiability and posterior geometry.
+"""Scoped structural reports and finite-design local Gaussian information.
 
-Status: planned (no public API yet). See ``docs/design/proposal.md`` and the issue
-tracker.
-
-Scope: Sensitivities (JVP or scale-aware finite differences); population and
-Gauss-Newton Fisher information in analysis coordinates; spectra and near-null
-directions; Schur-complement nuisance profiling; observed-information geometry and the
-marginal-gate stiffness test; profile likelihood (native, optional pyPESTO); structural
-identifiability via SIAN / StructuralIdentifiability.jl through juliacall.
-
+Optional compiler/engine consumers live in ``adapters.op_identify``. General
+coordinate transformations, nuisance profiling, observed posterior curvature,
+profile likelihood and external structural tools retain their separate scopes.
 """
 
-__all__: list[str] = []
+from op_infer.geometry import (
+    GaussianInformation,
+    InformationContext,
+    InformationLimits,
+    LocalSpectrum,
+    ScalingAssessment,
+    ScalingGenerator,
+    ScalingVerification,
+    gaussian_mean_information,
+    local_spectrum,
+)
+
+__all__ = [
+    "GaussianInformation",
+    "InformationContext",
+    "InformationLimits",
+    "LocalSpectrum",
+    "ScalingAssessment",
+    "ScalingGenerator",
+    "ScalingVerification",
+    "gaussian_mean_information",
+    "local_spectrum",
+]

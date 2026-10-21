@@ -34,7 +34,7 @@ def test_module_scaffold(name: str) -> None:
     """Planned modules retain scope docs; only implemented modules export an API."""
     mod = importlib.import_module(f"op_infer.{name}")
     assert mod.__doc__
-    if name not in {"priors", "observe", "simulation"}:
+    if name not in {"priors", "observe", "simulation", "identify"}:
         assert "Scope:" in mod.__doc__
     if name not in {
         "forward",
@@ -46,5 +46,6 @@ def test_module_scaffold(name: str) -> None:
         "priors",
         "observe",
         "simulation",
+        "identify",
     }:
         assert mod.__all__ == []
