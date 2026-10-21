@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "prior": {
+    "kind": "fixture-v1",
+    "digest": "sha256:7c6cd6b66594848b15104fb84b118e4b6606b64e1d390bd8dca9a16548782b59"
+  },
+  "design": {
+    "kind": "fixture-v1",
+    "digest": "sha256:8a334d848abb1925ff67454fb2ef6f9e07e1962895a34d0d6bb315d3ab560bac"
+  },
+  "simulator": {
+    "kind": "fixture-v1",
+    "digest": "sha256:2472f8b0c2bc0bc0fe61866d41053617102e48a8c0045474e3e851fd3e5d6393"
+  },
+  "target": {
+    "kind": "deterministic_approximation",
+    "intended": {
+      "kind": "fixture-v1",
+      "digest": "sha256:36fef26991eaeb48aac34f26f2de1cd5afc187affed2cbad81ab8465d30de10f"
+    },
+    "evaluated": {
+      "kind": "fixture-v1",
+      "digest": "sha256:c8e8b4c1ad539b9872e2bcecfaf4577a3587c976383e50ab9b8ab5e9152bc514"
+    },
+    "qualification": {
+      "status": "unqualified",
+      "scope": {
+        "kind": "fixture-v1",
+        "digest": "sha256:5d6f88acc57124e491002b385b6a0fc3ad3f2aa0ca7b8ee352abaa0366693fb9"
+      },
+      "reason": "Metadata only; qualification requires independent evidence",
+      "evidence": []
+    }
+  },
+  "numerical": {
+    "solver": {
+      "kind": "fixture-v1",
+      "digest": "sha256:0c7a2f22c40c045225378dd74e7bf9257875c0fbd4d30934ef8b75ff1e9763a4"
+    },
+    "time_mesh": {
+      "kind": "fixture-v1",
+      "digest": "sha256:60a58bb49e004a9edfb6e33b4cb93b973671da24d0e5d0b2a5d6f12cd5dacd77"
+    },
+    "spatial_mesh": null,
+    "topology": null,
+    "geometry": "frozen",
+    "replay": null,
+    "mesh_policy": {
+      "kind": "fixture-v1",
+      "digest": "sha256:9bad0b89600d596f34005363aed6aafaa210e7e9ed0fc212d486700227762a23"
+    },
+    "observation": {
+      "kind": "fixture-v1",
+      "digest": "sha256:393841b5a9a75b5fccf9686657cd7734ba4dace28d26e3a5494189f4e7fd9118"
+    },
+    "field_prior": {
+      "kind": "fixture-v1",
+      "digest": "sha256:e5da4ec07bb3698b799c25a4cd0863d4a8b4bcdb9e68ae3048a26fcd7f325b21"
+    },
+    "derivative": {
+      "mode": "finite_difference",
+      "parameters": [
+        "rate"
+      ],
+      "adaptive_path": "not_applicable",
+      "graph_scope": {
+        "kind": "fixture-v1",
+        "digest": "sha256:1d6d23a99ee5011615c6782e2daa5224d5e859705ff492f7f03ecdb25295342c"
+      },
+      "qualification": {
+        "status": "unqualified",
+        "scope": {
+          "kind": "fixture-v1",
+          "digest": "sha256:5d6f88acc57124e491002b385b6a0fc3ad3f2aa0ca7b8ee352abaa0366693fb9"
+        },
+        "reason": "Metadata only; qualification requires independent evidence",
+        "evidence": []
+      }
+    },
+    "errors": [
+      {
+        "kind": "time",
+        "status": "unqualified",
+        "reason": "Not qualified in metadata-only fixture",
+        "controls": null,
+        "evidence": null
+      },
+      {
+        "kind": "space_quadrature",
+        "status": "unqualified",
+        "reason": "Not qualified in metadata-only fixture",
+        "controls": null,
+        "evidence": null
+      },
+      {
+        "kind": "nonlinear_solve",
+        "status": "unqualified",
+        "reason": "Not qualified in metadata-only fixture",
+        "controls": null,
+        "evidence": null
+      },
+      {
+        "kind": "linear_solve",
+        "status": "unqualified",
+        "reason": "Not qualified in metadata-only fixture",
+        "controls": null,
+        "evidence": null
+      },
+      {
+        "kind": "unit_integration",
+        "status": "unqualified",
+        "reason": "Not qualified in metadata-only fixture",
+        "controls": null,
+        "evidence": null
+      },
+      {
+        "kind": "monte_carlo",
+        "status": "unqualified",
+        "reason": "Not qualified in metadata-only fixture",
+        "controls": null,
+        "evidence": null
+      },
+      {
+        "kind": "sampler",
+        "status": "unqualified",
+        "reason": "Not qualified in metadata-only fixture",
+        "controls": null,
+        "evidence": null
+      }
+    ],
+    "qualification": {
+      "status": "unqualified",
+      "scope": {
+        "kind": "fixture-v1",
+        "digest": "sha256:5d6f88acc57124e491002b385b6a0fc3ad3f2aa0ca7b8ee352abaa0366693fb9"
+      },
+      "reason": "Metadata only; qualification requires independent evidence",
+      "evidence": []
+    }
+  },
+  "estimator_stage": "qualification",
+  "estimator_settings": {
+    "kind": "fixture-v1",
+    "digest": "sha256:91058e320aa47ca19aaf2e32d65a127938dd25124b258afbe94f8730cdda60a2"
+  },
+  "backend_versions": [
+    {
+      "name": "numpy",
+      "version": "fixture"
+    }
+  ],
+  "commit": {
+    "kind": "fixture-v1",
+    "digest": "sha256:0678716936bf67b1149ff35f2177afac89ec017aaf41693d9b3c042c79962053"
+  }
+}

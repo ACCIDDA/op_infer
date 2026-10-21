@@ -1,0 +1,17 @@
+{
+  "source_sha256": "49a0cdb64b8b9dbc383ded98d9020bdb045a7a50466baad80ad5b755f9364fa4",
+  "data_sha256": "f8bd94277cc292fad3654891048fa3f62f09fd50ea9da778b371e3d2b2a4db6a",
+  "sources": [
+    "illustrate_normal_sbc.py",
+    "normal_sbc.py"
+  ],
+  "rendered_with": {
+    "numpy": "2.5.4",
+    "matplotlib": "3.11.2"
+  },
+  "exports": {
+    "figure.svg": "d25138b8e733c3f127a81c0ba20fc700e5cee7a933cebb499a12f6dde043a509",
+    "figure.pdf": "578cd12222958d90f745e93c217b794ca3c87ea8ffae4bfb6133c5119e14a50c",
+    "data.json": "f8bd94277cc292fad3654891048fa3f62f09fd50ea9da778b371e3d2b2a4db6a"
+  }
+}

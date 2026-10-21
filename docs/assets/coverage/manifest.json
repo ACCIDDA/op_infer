@@ -1,0 +1,25 @@
+{
+  "source_sha256": "dd102d0e92848fbd6b5f90385a024a408448aef7e463c20c6972d8a9c53263db",
+  "data_sha256": "9d57332bfb9766f5ccb17c1f3e9934ab62ec8c8a65f8f89132609f2dcb21b84e",
+  "sources": [
+    "coverage_diagnostics.py",
+    "coverage.py",
+    "tarp.py",
+    "rng.py",
+    "posterior.py"
+  ],
+  "rendered_with": {
+    "numpy": "2.5.4",
+    "matplotlib": "3.11.2"
+  },
+  "exports": {
+    "figure.svg": "22873868090e9d46629ed09dc64f4ec6cd54e33df2982762c97f8522eaa0c5aa",
+    "figure.pdf": "ef937dec3d7c22ff9b47a9239e7047dff425406d16e6180915d2313a53967630",
+    "data.json": "9d57332bfb9766f5ccb17c1f3e9934ab62ec8c8a65f8f89132609f2dcb21b84e"
+  },
+  "reference_versions": {
+    "scipy": "1.18.1",
+    "tarp": "0.1.1",
+    "op_infer": "0.0.1"
+  }
+}

@@ -1,0 +1,113 @@
+[project]
+name = "op_infer"
+version = "0.0.1"
+description = "Scientific model fitting through established inference libraries, simulation-based calibration and replicated design studies"
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Joshua Macdonald", email = "jmacdo16@jh.edu" },
+]
+dependencies = [
+    "array-api-compat>=1.12",
+    "numpy>=2.0",
+    "pydantic>=2.12.5,<3.0.0",
+    "scipy>=1.13",
+]
+
+classifiers = [
+    "Private :: Do Not Upload",
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "License :: OSI Approved :: MIT License",
+]
+
+[project.urls]
+Repository = "https://github.com/ACCIDDA/op_infer"
+Issues = "https://github.com/ACCIDDA/op_infer/issues"
+Changelog = "https://github.com/ACCIDDA/op_infer/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+# Backends (array-polymorphic core is exercised against each in CI as modules land)
+jax = ["jax>=0.4.36"]
+torch = ["torch>=2.6"]
+# Estimator adapters (each optional; samplers are never reimplemented here)
+numpyro = ["jax>=0.4.36", "numpyro>=0.15"]
+blackjax = ["jax>=0.4.36", "blackjax>=1.2"]
+sbi = ["torch>=2.6", "sbi>=0.27"]
+pyabc = ["pyabc>=0.12"]
+# Results, orchestration and model stack
+diagnostics = ["arviz-stats>=1.0,<2"]
+# TARP 0.1.1 imports deprecation/tqdm but omits them from its metadata.
+tarp = ["tarp>=0.1.1,<0.2", "deprecation>=2.1", "tqdm>=4.66"]
+arviz = ["arviz>=1.0,<2", "xarray>=2024.11", "netcdf4>=1.7.2"]
+study = ["trade-study[parallel]>=0.4"]
+# Structural identity additionally requires the reviewed unreleased compiler source;
+# see docs/forward-models.md until the next op_system release includes it.
+op = ["op_system>=0.9", "op_engine>=0.8"]
+# Identifiability bridges
+julia = ["juliacall>=0.9"]
+pypesto = ["pypesto>=0.5"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/op_infer"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["flepimop2-op_infer/"]
+
+[dependency-groups]
+dev = [
+    "mkdocs>=1.6.1,<2.0.0",
+    "mkdocs-material>=9.7.1",
+    "mkdocstrings[python]>=1.0.1",
+    "mkdocs-autorefs>=1.4.3",
+    "mypy>=1.18.2",
+    "pytest>=8.4.2",
+    "ruff>=0.13.3",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["src/op_infer/", "tests/"]
+addopts = "--doctest-modules -q"
+
+[tool.mypy]
+strict = true
+mypy_path = "src"
+files = ["src/op_infer", "tests", "examples"]
+
+# Array API compat has no typing marker; optional backend/I/O packages may be absent.
+# Installed typed dependencies still participate in strict checking.
+[[tool.mypy.overrides]]
+module = ["array_api_compat", "scipy", "scipy.*", "arviz_base", "xarray", "jax", "jax.numpy", "torch", "numpyro", "numpyro.*", "trade_study", "torch.*", "sbi", "sbi.*"]
+ignore_missing_imports = true
+
+[tool.ruff]
+extend-exclude = ["flepimop2-op_infer/"]
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 72
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["COM812", "D203", "D212", "PLR2004", "CPY001"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*" = ["INP001", "S101"]
+"flepimop2-op_infer/tests/**/*" = ["INP001", "S101"]
+"examples/*.py" = ["INP001"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

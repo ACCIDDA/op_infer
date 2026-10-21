@@ -1,0 +1,73 @@
+{
+  "bank_mib": 64.0625,
+  "completed_epochs": 4,
+  "elapsed_seconds": 12.410209934983868,
+  "fit_state_digest": "sha256:afdb8c6984a1e8eaf4b2fca7c353f391a724cc05305b12925b4423768eb0df65",
+  "mode": "native",
+  "peak_rss_mib": 710.02734375,
+  "platform": "Linux-6.17.0-1033-oem-x86_64-with-glibc2.39",
+  "provenance": {
+    "backend_versions": [
+      {
+        "name": "numpy",
+        "version": "2.5.4"
+      },
+      {
+        "name": "python",
+        "version": "3.13.13"
+      },
+      {
+        "name": "sbi",
+        "version": "0.27.0"
+      },
+      {
+        "name": "torch",
+        "version": "2.14.1+cpu"
+      }
+    ],
+    "commit": {
+      "digest": "sha256:1bb7c291c7b18548bdf6b14529ef8325c8fdfe2704b7cfe2b45ff23817586174",
+      "kind": "source-manifest-v1"
+    },
+    "design": {
+      "digest": "sha256:2a6cd1198518db2f7a62155ccc856bb17f927e93934e3af9d34e6699b7760121",
+      "kind": "gaussian-cohort-design-v1"
+    },
+    "estimator_settings": {
+      "digest": "sha256:6d9c0dcb29f43120bd78a5d6a49e33f414975f334cc468f472abc9edda0e922a",
+      "kind": "sbi-npe-settings-v1"
+    },
+    "estimator_stage": "training_demonstration",
+    "numerical": null,
+    "prior": {
+      "digest": "sha256:cdc2e2977c9bb0d2e2f21bdeaceda2ee5b33c9c23705069f3c5e200a427897c2",
+      "kind": "prior-v1"
+    },
+    "schema_version": 1,
+    "simulator": {
+      "digest": "sha256:1bb7c291c7b18548bdf6b14529ef8325c8fdfe2704b7cfe2b45ff23817586174",
+      "kind": "source-manifest-v1"
+    },
+    "target": {
+      "evaluated": {
+        "digest": "sha256:dffc1f2a4d5b08b5db092d2798794d667820bdccc1328cca6fe213d31d370c17",
+        "kind": "target-v1"
+      },
+      "intended": {
+        "digest": "sha256:dffc1f2a4d5b08b5db092d2798794d667820bdccc1328cca6fe213d31d370c17",
+        "kind": "target-v1"
+      },
+      "kind": "analytic",
+      "qualification": {
+        "evidence": [],
+        "reason": "Synthetic execution and memory demonstration, not calibration",
+        "scope": {
+          "digest": "sha256:dffc1f2a4d5b08b5db092d2798794d667820bdccc1328cca6fe213d31d370c17",
+          "kind": "target-v1"
+        },
+        "status": "unqualified"
+      }
+    }
+  },
+  "threads": 1
+}

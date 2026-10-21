@@ -1,0 +1,366 @@
+---
+name: 'CI'
+
+'on':
+  pull_request:
+    branches:
+      - 'main'
+  push:
+    branches:
+      - 'main'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: 'read'
+
+jobs:
+  process-provider:
+    name: 'Process provider (${{ matrix.source }})'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      matrix:
+        include:
+          - source: 'published-floor'
+            flepimop2: 'flepimop2==0.3.0'
+          - source: 'merged-upstream'
+            flepimop2: 'flepimop2 @ git+https://github.com/ACCIDDA/flepimop2@9b8461fdd1f70e97d5d4cafa1f6ab5bf6aea46c3'
+    env:
+      FLEPIMOP2_SPEC: '${{ matrix.flepimop2 }}'
+    steps:
+      - uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - uses: 'taiki-e/install-action@v2'
+        with:
+          tool: 'just'
+      - uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: '3.12'
+      - run: 'uv sync --dev --extra study'
+      - run: 'just qualify-process-provider'
+  native-npe:
+    name: 'Native sbi NPE (${{ matrix.dependencies }}, CPU)'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      matrix:
+        dependencies: ['current', 'minimum']
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: '3.12'
+      - run: 'uv sync --dev'
+      - if: "matrix.dependencies == 'current'"
+        run: |
+          uv pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.6'
+          uv pip install 'sbi>=0.27'
+      - if: "matrix.dependencies == 'minimum'"
+        run: |
+          uv pip install --index-url https://download.pytorch.org/whl/cpu 'torch==2.6.0'
+          uv pip install 'sbi==0.27.0'
+      - name: 'Require real native fitting, masking, sampling and guarded I/O'
+        run: |
+          uv run --no-sync python -c 'import torch, sbi'
+          uv run --no-sync mypy
+          uv run --no-sync pytest tests/test_sbi_npe.py tests/test_sbi_training.py tests/test_structural_sbi.py
+          uv run --no-sync python examples/npe_training.py "$RUNNER_TEMP/npe-resume" --until-epoch 2
+          uv run --no-sync python examples/npe_training.py "$RUNNER_TEMP/npe-resume" --resume
+          uv run --no-sync python examples/npe_training.py "$RUNNER_TEMP/npe-full"
+          uv run --no-sync python -c 'import json, os; from pathlib import Path; root = Path(os.environ["RUNNER_TEMP"]); a = json.loads((root / "npe-resume/result-borrowed.json").read_text()); b = json.loads((root / "npe-full/result-borrowed.json").read_text()); assert a["fit_state_digest"] == b["fit_state_digest"], "Cross-process NPE continuation differs"'
+  sbc-execution:
+    name: 'SBC/design execution (${{ matrix.dependencies }})'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      matrix:
+        dependencies: ['current', 'minimum-study']
+    steps:
+      - uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: '3.12'
+      - run: 'uv sync --dev --extra study'
+      - if: "matrix.dependencies == 'minimum-study'"
+        run: "uv pip install 'trade-study==0.4.0'"
+      - name: 'Run the actual orchestration dependency'
+        run: |
+          uv run --no-sync python -c 'import trade_study'
+          uv run --no-sync pytest tests/test_documentation.py tests/test_sbc_runner.py tests/test_design_study.py tests/test_coverage.py tests/test_masked_sbc.py
+          uv run --no-sync pytest tests/test_structural_artifacts.py::test_sbc_bank_resume_refuses_a_changed_structural_model tests/test_structural_artifacts.py::test_design_selection_records_keep_model_identity
+          uv run --no-sync python examples/normal_sbc.py "$RUNNER_TEMP/normal-sbc"
+          uv run --no-sync python examples/illustrate_normal_sbc.py --check
+          uv run --no-sync python examples/masked_normal_sbc.py "$RUNNER_TEMP/masked-sbc"
+  core:
+    name: 'Core (${{ matrix.python-version }})'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13', '3.14']
+    steps:
+      - name: 'Checkout repository'
+        uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - name: 'Install just'
+        uses: 'taiki-e/install-action@v2'
+        with:
+          tool: 'just'
+      - name: 'Setup uv'
+        uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: 'Sync'
+        run: 'uv sync --dev'
+      - name: 'Lint, type-check, test, docs'
+        run: 'just ci'
+
+  core-dependency-floor:
+    name: 'Core dependency floor'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout repository'
+        uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - name: 'Install just'
+        uses: 'taiki-e/install-action@v2'
+        with:
+          tool: 'just'
+      - name: 'Setup uv'
+        uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: '3.12'
+      - name: 'Install minimum core dependencies'
+        run: |
+          uv sync --dev
+          uv pip install 'numpy==2.0.0' 'pydantic==2.12.5' 'array-api-compat==1.12.0'
+      - name: 'Check the complete core at its dependency floor'
+        env:
+          UV_NO_SYNC: '1'
+        run: 'just ci'
+
+  numerical-reference:
+    name: 'Numerical reference (CPU)'
+    runs-on: 'ubuntu-latest'
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - name: 'Checkout repository'
+        uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - name: 'Install just'
+        uses: 'taiki-e/install-action@v2'
+        with:
+          tool: 'just'
+      - name: 'Setup uv'
+        uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: '3.12'
+      - name: 'Install optional numerical dependencies'
+        run: |
+          uv sync --dev --extra op --extra jax
+          uv pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.6'
+      - name: 'Qualify all three native backends'
+        run: 'just qualify-numerical'
+      - name: 'Qualify native posterior graphs'
+        run: 'just qualify-native-posterior'
+      - name: 'Qualify native indexed random streams'
+        run: 'just qualify-rng'
+
+  compiled-forward:
+    name: 'Compiled forward (CPU)'
+    runs-on: 'ubuntu-latest'
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - uses: 'taiki-e/install-action@v2'
+        with:
+          tool: 'just'
+      - uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: '3.12'
+      - name: 'Install qualified compiler identity source and CPU backends'
+        run: |
+          uv sync --dev --extra study --extra op --extra jax
+          uv pip install 'op-system @ git+https://github.com/ACCIDDA/op_system@4c054694f7cfd4774a3e9abfdefc93551d4f7126'
+          uv pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.6'
+      - run: 'just qualify-forward'
+
+  numpyro-nuts:
+    name: 'NumPyro CPU (${{ matrix.environment }}, ${{ matrix.python-version }})'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: '3.12'
+            environment: 'current'
+          - python-version: '3.14'
+            environment: 'current'
+          - python-version: '3.12'
+            environment: 'minimum'
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - name: 'Checkout repository'
+        uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - name: 'Install just'
+        uses: 'taiki-e/install-action@v2'
+        with:
+          tool: 'just'
+      - name: 'Setup uv'
+        uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: '${{ matrix.python-version }}'
+      - name: 'Install optional native fitting dependencies'
+        run: 'uv sync --dev --extra numpyro'
+      - name: 'Install declared dependency floor'
+        if: "matrix.environment == 'minimum'"
+        run: |
+          uv pip install 'numpy==2.0.0' 'pydantic==2.12.5' 'jax==0.4.36' 'numpyro==0.15.0'
+      - name: 'Qualify real native fits and analytic references'
+        run: 'just qualify-numpyro'
+      - name: 'Run documented fitting example'
+        run: 'just example-numpyro'
+
+  coverage-diagnostics:
+    name: 'Coverage/TARP (${{ matrix.environment }}, ${{ matrix.python-version }})'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: '3.12'
+            environment: 'current'
+          - python-version: '3.14'
+            environment: 'current'
+          - python-version: '3.12'
+            environment: 'minimum'
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - uses: 'taiki-e/install-action@v2'
+        with:
+          tool: 'just'
+      - uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: '${{ matrix.python-version }}'
+      - run: 'uv sync --dev --extra tarp'
+      - if: "matrix.environment == 'minimum'"
+        run: "uv pip install 'numpy==2.0.0' 'scipy==1.13.0' 'pydantic==2.12.5'"
+      - run: 'just qualify-coverage'
+
+  mcmc-diagnostics:
+    name: 'Named MCMC diagnostics (${{ matrix.environment }}, ${{ matrix.python-version }})'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: '3.12'
+            environment: 'current'
+          - python-version: '3.14'
+            environment: 'current'
+          - python-version: '3.12'
+            environment: 'minimum-stats'
+    env:
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - uses: 'taiki-e/install-action@v2'
+        with:
+          tool: 'just'
+      - uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: '${{ matrix.python-version }}'
+      - run: 'uv sync --dev --extra diagnostics --extra numpyro'
+      - if: "matrix.environment == 'minimum-stats'"
+        run: "uv pip install 'arviz-stats==1.0.0' 'numpy==2.0.0' 'jax==0.4.36' 'numpyro==0.15.0'"
+      - run: 'just qualify-diagnostics'
+
+  posterior-snapshots:
+    name: 'Posterior snapshots (${{ matrix.python-version }})'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.14']
+    steps:
+      - name: 'Checkout repository'
+        uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - name: 'Install just'
+        uses: 'taiki-e/install-action@v2'
+        with:
+          tool: 'just'
+      - name: 'Setup uv'
+        uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: 'Install optional snapshot dependencies'
+        run: 'uv sync --dev --extra arviz'
+      - name: 'Qualify real ArviZ/netCDF round trips'
+        run: 'just qualify-posterior'
+
+  io-dependency-floor:
+    name: 'I/O dependency floor'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout repository'
+        uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - name: 'Setup uv'
+        uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          python-version: '3.12'
+      - name: 'Install the optional I/O dependency floor'
+        run: |
+          uv sync --dev --extra arviz
+          uv pip install 'arviz==1.0.0' 'arviz-base==1.0.0' 'xarray==2024.11.0' 'netcdf4==1.7.2'
+      - name: 'Check native extension imports with NumPy 2'
+        run: |
+          uv run --no-sync python - <<'PY'
+          import arviz_base
+          import netCDF4
+          import numpy
+          import xarray
+
+          print(numpy.__version__, netCDF4.__version__, xarray.__version__)
+          PY
+      - name: 'Qualify snapshots with minimum I/O dependencies'
+        run: 'uv run --no-sync pytest tests/test_posterior_arviz.py'

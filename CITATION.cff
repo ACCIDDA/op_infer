@@ -1,0 +1,25 @@
+cff-version: "1.2.0"
+message: >-
+  If you use op_infer or its flepimop2 provider, please cite this software
+  and record the exact release version used in your methods.
+type: software
+title: "op_infer: the statistical layer of the op stack"
+abstract: >-
+  Parameter spaces, priors, observation models, posteriors with provenance,
+  calibration gates, identifiability and design studies for mechanistic
+  models, wrapping mature inference libraries, with a separately distributed
+  flepimop2 provider.
+authors:
+  - family-names: Macdonald
+    given-names: Joshua
+    email: jmacdo16@jh.edu
+version: "0.0.1"
+license:
+  - MIT
+  - GPL-3.0-or-later
+repository-code: "https://github.com/ACCIDDA/op_infer"
+keywords:
+  - Bayesian inference
+  - simulation-based calibration
+  - identifiability
+  - experimental design

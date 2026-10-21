@@ -1,0 +1,10 @@
+| Usable replicates | Family rejection lower bound | Upper bound |
+| ---: | ---: | ---: |
+| 300 | 0.073312 | 1.000000 |
+| 1000 | 0.001392 | 0.027835 |
+| 1200 | 0.000473 | 0.009457 |
+
+| TARP fixture | Usable / planned rows | Failed rows | Max deviation |
+| --- | ---: | ---: | ---: |
+| Analytic posterior | 600 / 600 | 0 | 0.0201 |
+| Mean shifted by 1.5 | 600 / 600 | 0 | 0.4000 |

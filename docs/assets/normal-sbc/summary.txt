@@ -1,0 +1,10 @@
+| Quantity | Value |
+| --- | ---: |
+| Requested replicates | 64 |
+| Failed replicates | 0 |
+| Resumed replicates | 64 |
+| Total in ledger | 64 |
+| Underpowered | True |
+| Gate label | underpowered pass |
+| Exact posterior mean (observed data) | 0.1600 |
+| Exact posterior SD | 0.4472 |
