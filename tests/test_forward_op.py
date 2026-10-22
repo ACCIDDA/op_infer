@@ -673,7 +673,8 @@ def test_one_step_first_interval_requires_no_empty_scan(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Adapters may require positive input lengths after the FSAL bootstrap."""
-    from op_engine import array_namespace, loop_ops  # noqa: PLC0415
+    engine = importlib.import_module("op_engine")
+    loop_ops = importlib.import_module("op_engine.loop_ops")
 
     lengths = []
 
@@ -696,7 +697,7 @@ def test_one_step_first_interval_requires_no_empty_scan(
         loop_ops,
         "_LOOP_ADAPTERS",
         {
-            array_namespace(np.ones(1)).__name__: loop_ops.LoopAdapter(
+            engine.array_namespace(np.ones(1)).__name__: loop_ops.LoopAdapter(
                 scan=positive_scan
             )
         },
