@@ -19,6 +19,7 @@ trade-study. No sampler, scoring-rule library or executor is reimplemented here.
 | Masked-cohort NPE | `adapters.sbi`, `NpeSettings`, `NpeEnsemble`, guarded native save/load | `sbi` extra; CPU, declared masks/counts, full real-vector support; see [NPE](sbi-npe.md). |
 | Large NPE banks and training resume | `fit_npe` borrowed-bank/checkpoint options | Qualified sbi 0.27.0 CPU boundary; removes full observation copies and preserves native training state, with exact bank/runtime guards. |
 | Seeded criteria | `gates.Gate`, `GateSet`, `GateRecord` (also in `calibrate`) | [Saved gate records](gates.md): adequacy versus decision criteria, context checks, seeded callbacks and amendment disclosures. |
+| Calibration readings | `readings.CalibrationPolicy`, `CalibrationEvidence`, `CalibrationRecord` | [Saved policies](calibration-readings.md): fixed cohorts, point/interval panels, usable floors, failure budgets and required quantities. |
 | Coverage summaries | `calibrate.coverage_summary` | `study` extra; central-interval coverage, marginal Wilson intervals and explicit failed-attempt counts. |
 | Coverage-rule planning | `CoverageRule`, `coverage_operating_characteristics`, `plan_coverage_replicates` | [Coverage planning](coverage-planning.md); fixed successful bank, inclusive bounds and a conservative union bound over the full supplied family. |
 | TARP curves | `adapters.tarp.tarp_coverage` | `tarp` extra; [reference curves](coverage-planning.md) with explicit points/coordinates, retained row failures and no automatic gate reading. |

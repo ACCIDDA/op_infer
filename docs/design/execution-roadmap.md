@@ -12,8 +12,8 @@ define numerical ownership and measurement boundaries.
 1. The [identified forward protocol](../forward-models.md), callable adapter and
    bounded compiled fixed-step CPU adapter are implemented. Extend other solver
    modes only with their own layout, output, derivative and execution evidence.
-2. Schema-2 structural identity now flows through existing guarded provenance;
-   legacy schema-1 identities remain unchanged. Keep model structure separate
+2. The compiler's schema-1 structural identity now flows through schema-2 guarded
+   provenance; legacy schema-1 provenance remains unchanged. Keep model structure separate
    from fitted values, numerical settings, prior/design and estimator identity.
 3. The [shared statistical models](../statistical-models.md) now supply five
    independent prior families, seven iid observation families, Normal censoring,
@@ -37,6 +37,19 @@ autodifferentiation graphs. Existing bounded CPU fitting contracts do not qualif
 GPU fitting or all backend operations.
 
 ## Identifiability contracts
+
+The [scoped implementation](../identifiability.md) now copies existing compiler
+scaling reports and consumes the engine's measured forward sensitivities. Native
+bounded Gaussian mean information retains physical units and design/source/
+initialization/observation/numerical references. Explicit host spectra preserve
+rank tolerances. This does not complete general transformed-coordinate Fisher
+information, nuisance profiling, posterior curvature or external rank tooling.
+
+The [saved reading policy](../calibration-readings.md) separately records point
+and interval criteria, a prospective governing choice, complete replicate banks,
+usable floors, failure budgets and must-pass quantities. Its public finite-sample
+qualification uses independent synthetic coverage counts. Application policy,
+metric assumptions and end-to-end calibration remain consumer responsibilities.
 
 Consume the compiler's existing scaling-gauge reports and coordinate maps. Keep
 unassessed/unsupported structural cases distinct from a proved absence of gauges.
@@ -100,3 +113,31 @@ change requires its own target, accuracy and calibration qualification.
 
 These are measurement requirements, not evidence of a production speedup, GPU
 support or a particular cause of runtime variation.
+
+## Completed execution evidence and next work
+
+The [CPU pipeline comparison](../pipeline-performance.md) now measures simulation,
+likelihood and gradients with complete/censored worker records. Grouped JAX
+observation scans remove repeated tracing in those fixed-forward cases. Existing
+NumPy/JAX/Torch execution remains the baseline; these measurements do not justify
+a new Rust implementation or qualify offline training performance.
+
+The [CUDA qualification](../cuda-qualification.md) covers actual A100 JAX/Torch
+statistical families, dtype/device, replay and gradients. Compiler/engine core
+CUDA checks additionally cover CuPy fixed-step execution, which does not imply
+CuPy distribution or estimator support. GPU fitting and application memory/epoch
+claims still need their own evidence.
+
+Reviewed derivative/export/sensitivity/device sources are
+[op_system ad3c28a](https://github.com/ACCIDDA/op_system/commit/ad3c28ac63e9af3b1210413a764b44a9c9bd2074)
+and [op_engine 2b8d46a](https://github.com/ACCIDDA/op_engine/commit/2b8d46a2b7a6c3ee2645c4d595be7d224c52433a).
+These are source qualification pins, not new published package versions.
+
+Next, profile representative structured/coupled consumers before selecting
+[optional Numba lowering](https://github.com/ACCIDDA/op_system/issues/327) or a
+[Torch sequential/compile adapter](https://github.com/ACCIDDA/op_engine/issues/257).
+Retain compilation break-even, memory, native gradients and explicit unsupported
+cases. The [Rust experiment](https://github.com/ACCIDDA/op_system/issues/329) stays
+behind a measured bottleneck and coarse boundary decision. Broader derivative
+structure, coordinate transformations and statistical studies keep their own
+acceptance criteria; a local matrix or generic gate is not a shortcut to them.

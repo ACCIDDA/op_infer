@@ -40,6 +40,7 @@ nav:
   - Rank-based calibration (SBC): calibration.md
   - Coverage planning and TARP: coverage-planning.md
   - Saved gate records: gates.md
+  - Calibration reading policies: calibration-readings.md
   - SBC execution: sbc-runner.md
   - Masked-unit SBC: masked-sbc.md
   - API: api.md
