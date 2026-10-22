@@ -420,14 +420,15 @@ def _scan_outputs(  # noqa: PLR0913 -- native driver and static observation plan
     first = partitions[0]
     starts = tuple(accumulate(first, initial=times[0]))[:-1]
     carry, _ = body(carry, (starts[0], first[0]))
-    carry, _ = adapter.scan(
-        body,
-        carry,
-        (
-            xp.asarray(starts[1:], dtype=carry[0].dtype),
-            xp.asarray(first[1:], dtype=carry[0].dtype),
-        ),
-    )
+    if len(first) > 1:
+        carry, _ = adapter.scan(
+            body,
+            carry,
+            (
+                xp.asarray(starts[1:], dtype=carry[0].dtype),
+                xp.asarray(first[1:], dtype=carry[0].dtype),
+            ),
+        )
     chunks.append(
         tuple(xp.expand_dims(value, axis=0) for value in observe(times[1], carry[0]))
     )

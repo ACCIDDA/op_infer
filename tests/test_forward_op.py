@@ -81,7 +81,10 @@ def backend(name: str) -> Iterator[tuple[Any, Any]]:
     if name == "jax":
         jax = pytest.importorskip("jax")
         xp = pytest.importorskip("jax.numpy")
-        with jax.enable_x64():
+        enable_x64 = getattr(jax, "enable_x64", None)
+        if enable_x64 is None:
+            enable_x64 = jax.experimental.enable_x64
+        with enable_x64():
             yield xp, jax
     elif name == "torch":
         yield pytest.importorskip("torch"), None
@@ -664,3 +667,49 @@ def test_grouped_scan_preserves_vector_observables_and_dynamic_time(
             rtol=0,
             atol=2e-5 if dtype == "float32" else 3e-7,
         )
+
+
+def test_one_step_first_interval_requires_no_empty_scan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Adapters may require positive input lengths after the FSAL bootstrap."""
+    engine = importlib.import_module("op_engine")
+    loop_ops = importlib.import_module("op_engine.loop_ops")
+
+    lengths = []
+
+    def positive_scan(body: Any, carry: Any, inputs: Any) -> tuple[Any, Any]:  # noqa: ANN401
+        length = len(inputs[0])
+        if length == 0:
+            msg = "This real loop adapter requires positive scan lengths"
+            raise ValueError(msg)
+        lengths.append(length)
+        outputs = []
+        for index in range(length):
+            carry, output = body(carry, tuple(value[index] for value in inputs))
+            outputs.append(output)
+        first = outputs[0]
+        if first is None:
+            return carry, None
+        return carry, tuple(np.stack(values) for values in zip(*outputs, strict=True))
+
+    monkeypatch.setattr(
+        loop_ops,
+        "_LOOP_ADAPTERS",
+        {
+            engine.array_namespace(np.ones(1)).__name__: loop_ops.LoopAdapter(
+                scan=positive_scan
+            )
+        },
+    )
+    model, settings, expected = fixture(loop="scan", max_step=0.5)
+    forward = adapter(model, settings, expected, np)
+    actual = forward(
+        {"rate": np.array(0.7), "scale": np.array(1.5), "initial": np.array(2.0)},
+        ForwardDesign(expected.design, None),
+        RandomKey(seed=1, stream="simulation"),
+    )["value"]
+    z = -0.7 * 0.5
+    factor = 1 + z + z**2 / 2 + z**3 / 6 + z**4 / 24
+    np.testing.assert_allclose(host(actual), 3 * factor ** np.arange(3), rtol=1e-14)
+    assert lengths == [1, 1]
