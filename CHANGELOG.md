@@ -27,6 +27,10 @@
 
 ### Fixed
 
+- Skip the empty first-interval scan after a single bootstrap step, allowing
+  registered adapters with positive-length contracts while preserving the
+  integration mesh and observation values.
+
 - Group equal-length fixed-forward observation intervals in nested native scans,
   reducing repeated JAX tracing without stacking primal state history. Preserve
   eager kernels, meshes, checkpoint/FSAL behavior and time-dependent/vector

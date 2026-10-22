@@ -84,3 +84,20 @@ state adoption is [op_engine #265](https://github.com/ACCIDDA/op_engine/pull/265
 The successful rerun retains the same numerical fixture. Core receipt sampling
 entries describe the earlier primitive check; the separate statistical receipts
 qualify the public sampling interface.
+
+
+## Deferred workstation rerun
+
+Further CuPy, JAX and Torch GPU execution is on hold until the maintainer resumes
+it on the GPU workstation. The earlier A100 receipts above remain historical
+and do not qualify another device or a changed source build.
+
+The [workstation handoff in op_system PR #339](https://github.com/ACCIDDA/op_system/pull/339)
+includes `docs/guides/gpu-workstation.md` and a bounded core fixture. It records
+exact engine/inference revisions, the required candidate compiler head, isolated
+current/minimum CuPy and separate JAX/Torch CUDA environments, expected counts,
+commands and metadata to retain. CuPy requires ten zero-skip compiler tests in
+each dependency lane; JAX/Torch require four core cases and the existing 24-case
+statistical fixture plus its masked/censored gradient check. The separate Torch
+compiled-loop adapter remains a CPU qualification. No estimator training,
+consumer adoption or package publication is part of this handoff.
