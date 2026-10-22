@@ -45,6 +45,8 @@ See [implemented capabilities](capabilities.md) for the current scope and extras
 
 ::: op_infer.identify
 
+::: op_infer.adapters.op_identify
+
 ::: op_infer.design
 
 ::: op_infer.rng

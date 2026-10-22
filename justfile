@@ -29,6 +29,11 @@ qualify-forward:
 	uv run --no-sync pytest tests/test_forward.py tests/test_forward_op.py
 	uv run --no-sync python examples/compiled_forward.py
 
+# Optional numerical packages are required here, rather than successful skips.
+qualify-identify:
+	uv run --no-sync python -c 'from op_system import symbolic_derivatives; from op_engine import solve_sensitivities; import jax, torch'
+	uv run --no-sync pytest tests/test_identify.py tests/test_identify_op.py
+
 # Optional snapshots: missing dependencies must fail this qualification.
 qualify-posterior:
 	uv run --no-sync python -c 'import arviz_base, xarray, netCDF4'
@@ -44,7 +49,7 @@ qualify-native-posterior:
 # Required statistical families: native imports fail rather than hiding skips.
 qualify-statistics:
 	uv run --no-sync python -c 'import jax, numpyro, torch'
-	uv run --no-sync pytest tests/test_priors.py tests/test_observe.py tests/test_statistical_backends.py tests/test_simulation.py src/op_infer/priors.py src/op_infer/observe.py
+	uv run --no-sync pytest tests/test_priors.py tests/test_observe.py tests/test_statistical_backends.py tests/test_simulation.py tests/test_identify.py src/op_infer/priors.py src/op_infer/observe.py
 
 # Task keys must replay on both real backends; missing extras fail this recipe.
 qualify-rng:
