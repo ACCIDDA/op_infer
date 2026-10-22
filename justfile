@@ -16,6 +16,10 @@ pytest:
 docs:
 	uv run mkdocs build --strict
 
+# Fixed policy qualification, including independent exact finite-sample references.
+qualify-readings:
+	uv run --no-sync pytest tests/test_readings.py tests/test_gates.py src/op_infer/gates.py
+
 # Optional qualification: install op, jax and torch extras before this recipe.
 # Explicit imports make missing backends a failure, never a successful skipped run.
 qualify-numerical:

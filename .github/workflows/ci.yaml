@@ -309,6 +309,8 @@ jobs:
       - if: "matrix.environment == 'minimum'"
         run: "uv pip install 'numpy==2.0.0' 'scipy==1.13.0' 'pydantic==2.12.5'"
       - run: 'just qualify-coverage'
+      - run: 'just qualify-readings'
+      - run: 'uv run --no-sync python examples/calibration_readings.py "$RUNNER_TEMP/readings-toy"'
 
   mcmc-diagnostics:
     name: 'Named MCMC diagnostics (${{ matrix.environment }}, ${{ matrix.python-version }})'

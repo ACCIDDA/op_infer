@@ -9,6 +9,12 @@
   mean information and explicit host spectra with source/layout and rank guards;
   preserve unavailable structural statuses and separate general inference scopes.
 
+- Add immutable calibration reading policies with a declared governing panel,
+  complete fixed replicate banks, point/interval criteria, practical metric
+  limits, usable floors, failure budgets and must-pass quantities. Preserve both
+  readings and every failure; qualify public synthetic operating characteristics
+  against independent exact finite-binomial references.
+
 - Add explicit device-local Torch CUDA RNG lowering and float32/64 observation
   sampling while retaining CPU stream derivation and local-generator semantics.
   Publish actual A100 JAX/Torch statistical qualification with independent

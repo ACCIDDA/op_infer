@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "scope": "independent finite-binomial public toy; no application defaults",
+  "script_sha256": "1946e3963c39353bb7dd137e4fc798994bf51a539f62bc9a7adcea6581c58598",
+  "versions": {
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  },
+  "policy": {
+    "schema_version": 1,
+    "name": "public-binomial-toy",
+    "context": {
+      "kind": "toy-design-v1",
+      "digest": "sha256:f08f213c601a93e64c729dd8fe37ee0d04e9adfe19e483edc03a16745221d50e"
+    },
+    "governing": "interval",
+    "rationale": "Illustrate compatibility and finite-sample resolution",
+    "replicate_ids": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
+      "20",
+      "21",
+      "22",
+      "23",
+      "24",
+      "25",
+      "26",
+      "27",
+      "28",
+      "29",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36",
+      "37",
+      "38",
+      "39",
+      "40",
+      "41",
+      "42",
+      "43",
+      "44",
+      "45",
+      "46",
+      "47",
+      "48",
+      "49",
+      "50",
+      "51",
+      "52",
+      "53",
+      "54",
+      "55",
+      "56",
+      "57",
+      "58",
+      "59",
+      "60",
+      "61",
+      "62",
+      "63",
+      "64",
+      "65",
+      "66",
+      "67",
+      "68",
+      "69",
+      "70",
+      "71",
+      "72",
+      "73",
+      "74",
+      "75",
+      "76",
+      "77",
+      "78",
+      "79"
+    ],
+    "minimum_usable": 80,
+    "max_failure_fraction": 0.0,
+    "max_failed_quantities": 0,
+    "must_pass": [
+      "quantity"
+    ],
+    "rules": [
+      {
+        "schema_version": 1,
+        "name": "coverage",
+        "quantity": "quantity",
+        "metric": "coverage",
+        "method": {
+          "kind": "op-infer-coverage-method-v1",
+          "digest": "sha256:f60f2e55047afb55d328fc9a89e796de6bd5fd2438df919b113689e2dcde1c25"
+        },
+        "lower": 0.4,
+        "upper": 0.6,
+        "view": "band",
+        "applies_to": [
+          "point",
+          "interval"
+        ]
+      }
+    ],
+    "amendment": null
+  },
+  "panel_order": [
+    "point",
+    "interval"
+  ],
+  "scenarios": [
+    {
+      "name": "calibrated-toy",
+      "success_probability": 0.5,
+      "exact_failure_probability": [
+        0.056664426345121074,
+        0.0001831165641297517
+      ],
+      "seeded_failure_frequency": [
+        0.0571,
+        0.0002
+      ]
+    },
+    {
+      "name": "misspecified-toy",
+      "success_probability": 0.8,
+      "exact_failure_probability": [
+        0.9999674968856253,
+        0.9783324177949834
+      ],
+      "seeded_failure_frequency": [
+        1.0,
+        0.9789
+      ]
+    }
+  ],
+  "monte_carlo": {
+    "seed": 82397,
+    "cohorts_per_scenario": 20000
+  }
+}

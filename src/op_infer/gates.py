@@ -8,14 +8,13 @@ characteristics; neither a saved specification nor a pass certifies calibration.
 from __future__ import annotations
 
 import math
-import os
-import tempfile
 from datetime import datetime  # noqa: TC003 - Pydantic resolves the schema at runtime
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from op_infer._registration import write_immutable_json
 from op_infer.posterior import ArtifactReference
 from op_infer.rng import RandomKey  # noqa: TC001 - Pydantic resolves the schema
 
@@ -78,7 +77,7 @@ class Gate(_Record):
 class GateAmendment(_Record):
     """Disclose a prospective revision and the evidence already seen.
 
-    ``supersedes`` identifies the prior saved GateSet. An empty
+    ``supersedes`` identifies the prior saved decision contract. An empty
     ``seen_before_amendment`` explicitly records that no result artifacts were
     seen. The timestamp and disclosure are supplied by the author; the package
     cannot authenticate chronology or establish independence of fresh evidence.
@@ -111,6 +110,7 @@ class GateSet(_Record):
     version control establishes whether results were unseen at registration.
 
     Examples:
+        >>> import tempfile
         >>> key = RandomKey(seed=7, stream="gates.validation")
         >>> context = ArtifactReference.from_bytes(b"toy", kind="design-v1")
         >>> criteria = GateSet(
@@ -188,24 +188,11 @@ class GateSet(_Record):
         Raises:
             ValueError: The destination already contains different bytes.
         """
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        payload = self.model_dump_json().encode()
-        with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as stream:
-            temporary = Path(stream.name)
-            stream.write(payload)
-        try:
-            try:
-                os.link(temporary, path)
-            except FileExistsError:
-                if path.read_bytes() != payload:
-                    msg = (
-                        "Saved gate specification differs; "
-                        "write an amendment separately"
-                    )
-                    raise ValueError(msg) from None
-        finally:
-            temporary.unlink()
+        write_immutable_json(
+            path,
+            self.model_dump_json().encode(),
+            conflict="Saved gate specification differs; write an amendment separately",
+        )
         return self.reference()
 
     def amend(

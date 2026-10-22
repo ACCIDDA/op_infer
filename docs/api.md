@@ -68,6 +68,8 @@ See [implemented capabilities](capabilities.md) for the current scope and extras
 
 ::: op_infer.gates
 
+::: op_infer.readings
+
 ## Shared statistical models
 
 ::: op_infer.priors

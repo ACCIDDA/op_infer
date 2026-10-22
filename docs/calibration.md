@@ -12,6 +12,10 @@ posterior-width comparisons. [Saved gate records](gates.md)
 provide prespecified scalar criteria separately from the legacy rank gate. There is no plotting layer here: the
 ledger carries the data for rank histograms.
 
+[Calibration reading policies](calibration-readings.md) add fixed replicate
+banks and a prospectively chosen point/interval reading, retaining both panels,
+failure budgets and an explicit insufficient-evidence outcome.
+
 The following requirements support reproducible calibration checks.
 
 Rank aggregation requires an integer `bins >= 2`, a positive integer
