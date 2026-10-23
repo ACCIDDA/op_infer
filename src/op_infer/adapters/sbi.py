@@ -1,8 +1,9 @@
 """Bounded native sbi NPE adapter for masked cohorts and seed ensembles.
 
 This adapter wraps native sbi density estimation;
-it implements neither flows nor posterior calibration. CPU float32, single-round
-training and full-real parameter support are the qualified initial scope.
+it implements neither flows nor posterior calibration. CPU or one explicitly
+selected CUDA device, float32, single-round training and full-real parameter
+support are the qualified scope.
 """
 
 from __future__ import annotations
@@ -93,6 +94,11 @@ class NpeSettings(BaseModel):
     stop_after_epochs: int = Field(default=20, ge=1)
     learning_rate: float = Field(default=5e-4, gt=0.0, allow_inf_nan=False)
     model: Literal["maf"] = "maf"
+    device: str = Field(
+        default="cpu",
+        pattern=r"^(cpu|cuda:(0|[1-9][0-9]*))$",
+        exclude_if=lambda value: value == "cpu",
+    )
 
     @model_validator(mode="after")
     def _names(self) -> NpeSettings:
@@ -131,9 +137,9 @@ def _native() -> tuple[ModuleType, ModuleType, ModuleType]:
         raise ImportError(msg) from error
 
 
-def sbi_backend_versions() -> tuple[BackendVersion, ...]:
-    """Return exact runtime identities for guarded fitting and loading."""
-    return tuple(
+def sbi_backend_versions(*, device: str = "cpu") -> tuple[BackendVersion, ...]:
+    """Return exact runtime and, for CUDA, device identities."""
+    versions = tuple(
         BackendVersion(
             name=name,
             version=platform.python_version()
@@ -141,6 +147,22 @@ def sbi_backend_versions() -> tuple[BackendVersion, ...]:
             else importlib.metadata.version(name),
         )
         for name in ("numpy", "python", "sbi", "torch")
+    )
+    target = _npe_device(device)
+    if target.type == "cpu":
+        return versions
+    torch, _inference, _nets = _native()
+    capability = torch.cuda.get_device_capability(target)
+    return (
+        BackendVersion(
+            name="cuda-device",
+            version=(
+                f"{torch.cuda.get_device_name(target)}; "
+                f"capability={capability[0]}.{capability[1]}"
+            ),
+        ),
+        BackendVersion(name="cuda-runtime", version=str(torch.version.cuda)),
+        *versions,
     )
 
 
@@ -151,13 +173,42 @@ def npe_settings_reference(settings: NpeSettings) -> ArtifactReference:
     )
 
 
-@contextmanager
-def _torch_scope(key: RandomKey) -> Iterator[None]:
-    """Temporarily install one native CPU stream and restore global Torch state."""
+def _npe_device(device: str) -> Any:  # noqa: ANN401
+    """Return one available qualified CPU or explicit CUDA device.
+
+    Raises:
+        ValueError: The requested CUDA device is unavailable.
+    """
     torch, _inference, _nets = _native()
-    generator = torch_generators((key,))[0]
-    with torch.random.fork_rng(devices=[]):
-        torch.random.set_rng_state(generator.get_state())
+    try:
+        target = torch.device(device)
+    except (RuntimeError, ValueError) as error:
+        msg = f"Invalid NPE device: {device}"
+        raise ValueError(msg) from error
+    if target.type == "cuda" and (
+        not torch.cuda.is_available()
+        or target.index is None
+        or target.index >= torch.cuda.device_count()
+    ):
+        msg = f"NPE CUDA device is unavailable: {device}"
+        raise ValueError(msg)
+    return target
+
+
+@contextmanager
+def _torch_scope(key: RandomKey, *, device: str = "cpu") -> Iterator[None]:
+    """Install addressed CPU/CUDA streams and restore both ambient states."""
+    torch, _inference, _nets = _native()
+    target = _npe_device(device)
+    cpu_generator = torch_generators((key,))[0]
+    cuda_generator = (
+        torch_generators((key,), device=target)[0] if target.type == "cuda" else None
+    )
+    cuda_devices = [target.index] if target.type == "cuda" else []
+    with torch.random.fork_rng(devices=cuda_devices):
+        torch.random.set_rng_state(cpu_generator.get_state())
+        if cuda_generator is not None:
+            torch.cuda.set_rng_state(cuda_generator.get_state(), device=target)
         dtype = torch.get_default_dtype()
         try:
             torch.set_default_dtype(torch.float32)
@@ -283,10 +334,9 @@ def _require_provenance(settings: NpeSettings, provenance: Provenance) -> None:
     Raises:
         ValueError: Runtime or settings differ from the caller's provenance.
     """
-    if (
-        provenance.estimator_settings != npe_settings_reference(settings)
-        or provenance.backend_versions != sbi_backend_versions()
-    ):
+    if provenance.estimator_settings != npe_settings_reference(
+        settings
+    ) or provenance.backend_versions != sbi_backend_versions(device=settings.device):
         msg = "NPE provenance settings or backend versions mismatch"
         raise ValueError(msg)
 
@@ -302,9 +352,10 @@ def _prepare_bank(
     """Validate the effective training bank in bounded chunks.
 
     Raises:
-        ValueError: Array layout, prior support or declared absence encoding differ.
+        ValueError: Array layout, prior support/device or absence encoding differ.
     """
     torch, _inference, _nets = _native()
+    target = _npe_device(settings.device)
     if type(borrow_bank) is not bool:
         msg = "borrow_bank must be a boolean"
         raise ValueError(msg)
@@ -347,8 +398,13 @@ def _prepare_bank(
     for start in range(0, len(theta), rows):
         parameters = theta[start : start + rows]
         _presence(observations[start : start + rows], settings)
+        try:
+            prior_log_prob = prior.log_prob(parameters.to(target))
+        except RuntimeError as error:
+            msg = "The native prior must use the declared NPE device"
+            raise ValueError(msg) from error
         if not bool(torch.isfinite(parameters).all()) or not bool(
-            torch.isfinite(prior.log_prob(parameters)).all()
+            torch.isfinite(prior_log_prob).all()
         ):
             msg = "Training parameters must lie in the supplied prior's finite support"
             raise ValueError(msg)
@@ -391,7 +447,8 @@ def fit_npe(  # noqa: PLR0913
     Args:
         theta: Aligned simulation-by-parameter training targets.
         observations: Simulation-by-unit-by-feature data, with all-NaN absent units.
-        prior: Native full-real-support prior used to generate the training bank.
+        prior: Native full-real-support prior used to generate the training bank,
+            with distribution tensors on the declared execution device.
         settings: Fixed architecture, full native epoch budget and training key.
         provenance: Independently supplied scientific/settings/runtime contract.
         checkpoint_path: Optional atomic output for resumable training boundaries.
@@ -403,13 +460,15 @@ def fit_npe(  # noqa: PLR0913
             bank copies; requires contiguous tensors and qualified sbi 0.27.0.
 
     Returns:
-        Native CPU float32 fit, retaining named variables and exact provenance.
+        Native float32 fit on the declared device, retaining named variables and
+        exact provenance.
 
     Raises:
         ValueError: Data, prior support or provenance do not meet this contract.
     """
     _torch, inference, nets = _native()
     _require_provenance(settings, provenance)
+    target = _npe_device(settings.device)
     limit = settings.max_epochs + 1 if until_epoch is None else until_epoch
     if (
         type(limit) is not int
@@ -424,6 +483,9 @@ def fit_npe(  # noqa: PLR0913
         )
         raise ValueError(msg)
     checkpointed = checkpoint_path is not None or resume_from is not None
+    if checkpointed and target.type != "cpu":
+        msg = "NPE training checkpoints currently require device='cpu'"
+        raise ValueError(msg)
     if checkpointed or borrow_bank:
         require_checkpoint_runtime()
     theta, observations = _prepare_bank(
@@ -432,7 +494,7 @@ def fit_npe(  # noqa: PLR0913
     bank = bank_digest(theta, observations) if checkpointed else ""
     with (
         tempfile.TemporaryDirectory(prefix="op-infer-npe-") as logs,
-        _torch_scope(settings.key),
+        _torch_scope(settings.key, device=settings.device),
         closing(
             importlib.import_module("torch.utils.tensorboard").SummaryWriter(logs)
         ) as writer,
@@ -449,14 +511,19 @@ def fit_npe(  # noqa: PLR0913
         native = inference.NPE(
             prior=prior,
             density_estimator=builder,
-            device="cpu",
+            device=settings.device,
             show_progress_bars=False,
             summary_writer=writer,
         )
         if borrow_bank:
             borrow_simulations(native, theta, observations)
         else:
-            native.append_simulations(theta, observations, exclude_invalid_x=False)
+            native.append_simulations(
+                theta,
+                observations,
+                exclude_invalid_x=False,
+                data_device="cpu",
+            )
         if len(native.get_simulations()[0]) != len(theta):
             msg = "Native sbi unexpectedly excluded simulation rows"
             raise RuntimeError(msg)
@@ -565,7 +632,8 @@ class NpeEnsemble:
         if isinstance(per_seed, bool) or not isinstance(per_seed, int) or per_seed < 2:
             msg = "per_seed must be an integer >= 2"
             raise ValueError(msg)
-        condition = torch.as_tensor(observation, dtype=torch.float32, device="cpu")
+        target = _npe_device(settings.device)
+        condition = torch.as_tensor(observation, dtype=torch.float32, device=target)
         if condition.ndim != 2:
             msg = "Sample one cohort (design units, features) at a time"
             raise ValueError(msg)
@@ -573,7 +641,7 @@ class NpeEnsemble:
         condition = condition.unsqueeze(0)
         _presence(condition, settings)
         parts = []
-        with _torch_scope(key), torch.no_grad():
+        with _torch_scope(key, device=settings.device), torch.no_grad():
             for member in self.members:
                 estimator = cast("Any", member.estimator).eval()
                 parts.append(
@@ -589,7 +657,9 @@ class NpeEnsemble:
             "ensemble": _ensemble_reference(self.members).model_dump(mode="json"),
             "sample_key": key.model_dump(mode="json"),
             "per_seed": per_seed,
-            "condition": hashlib.sha256(condition.numpy().tobytes()).hexdigest(),
+            "condition": hashlib.sha256(
+                condition.detach().cpu().numpy().tobytes()
+            ).hexdigest(),
         }
         provenance = self.members[0].provenance.model_copy(
             update={
@@ -665,7 +735,8 @@ def load_npe(path: str | Path, *, expected: Provenance) -> NpeFit:
         raise ValueError(msg)
     settings = NpeSettings.model_validate_json(payload["settings"])
     _require_provenance(settings, provenance)
-    with _torch_scope(settings.key):
+    target = _npe_device(settings.device)
+    with _torch_scope(settings.key, device=settings.device):
         embedding = build_masked_set_embedding(settings)
         builder = nets.posterior_nn(
             model=settings.model,
@@ -686,6 +757,7 @@ def load_npe(path: str | Path, *, expected: Provenance) -> NpeFit:
         )
         estimator = builder(dummy_theta, dummy_x)
         estimator.load_state_dict(payload["state"], strict=True)
+        estimator.to(target)
         estimator.eval()
     if _state_digest(estimator) != payload["state_digest"]:
         msg = "NPE state integrity mismatch"

@@ -4,6 +4,14 @@
 
 ### Added
 
+- Add bounded single-device CUDA execution to the native masked-cohort NPE
+  adapter. CUDA device identity is part of immutable settings and provenance;
+  the implicit CPU default preserves existing artifact identities. CPU banks
+  feed native CUDA batches, addressed CPU/CUDA RNG states are restored,
+  posterior draws and guarded inference snapshots remain on the declared
+  device, and unavailable or ambient CUDA targets fail explicitly. Resumable
+  training checkpoints remain CPU-only.
+
 - Consume existing compiler scaling reports and engine measured sensitivities in
   scoped physical-coordinate information contexts. Add native masked Gaussian
   mean information and explicit host spectra with source/layout and rank guards;

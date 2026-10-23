@@ -1,19 +1,25 @@
 # Native masked-cohort NPE
 
 Install `op_infer[sbi]` and use `op_infer.adapters.sbi`. This bounded adapter wraps
-sbi's single-round NPE/MAF training on CPU float32. It does not implement flows,
-calibration gates, automatic gate-driven retraining, multi-round proposals or GPU
-training.
+sbi's single-round NPE/MAF training in float32 on CPU or one explicitly indexed
+CUDA device. It does not implement flows, calibration gates, automatic
+gate-driven retraining or multi-round proposals.
 
 `NpeSettings` records the complete scalar parameter names, feature dimension,
-maximum design unit count, architecture, training controls and `RandomKey`.
+maximum design unit count, architecture, training controls, `RandomKey` and
+execution device. Use `device="cpu"` or an explicit target such as
+`device="cuda:0"`; unindexed CUDA and unavailable devices are errors.
 `fit_npe(theta, observations, prior=..., settings=..., provenance=...)` consumes
 aligned `(simulation, parameter)` and `(simulation, design_unit, feature)` native
-Torch tensors. Record the same prior, observation support and acceptance rule
-used to create the simulation bank; the adapter applies no plausibility filter.
-Exact installed versions come from `sbi_backend_versions()` and the canonical
-settings reference from `npe_settings_reference(settings)` must match the supplied
-complete `Provenance`.
+Torch tensors. Training banks remain CPU-resident; the native prior's parameter
+tensors must be on the declared training device. Record the same prior,
+observation support and acceptance rule used to create the simulation bank; the
+adapter applies no plausibility filter.
+Exact installed versions come from
+`sbi_backend_versions(device=settings.device)`. CUDA records additionally bind
+the Torch CUDA runtime, device name and compute capability. The canonical
+settings reference from `npe_settings_reference(settings)` must match the
+supplied complete `Provenance`.
 
 An absent unit has an all-NaN feature row. Partially missing rows and infinities
 are errors; encode within-unit missing features explicitly in the observation
@@ -49,12 +55,15 @@ support. Transform bounded parameters first, for example with declared logit
 coordinates, and record the transformation in prior/parameter provenance. No
 bounded-support correction is silently approximated.
 
-Native Torch training/sampling use a scoped CPU RNG and float32 default dtype,
-restoring the caller's RNG and dtype afterwards. Those native global contexts
-require serialized calls within a process; use separate worker processes for
-concurrent fitting. The data model does not eagerly import Torch/sbi. Seed
-ensembles can be retrained and independently re-gated after an initial gate
-failure; a changed ensemble needs new provenance and a new calibration record.
+Native Torch training/sampling use scoped addressed CPU and, when selected, CUDA
+RNG states plus a float32 default dtype, restoring the caller's states and dtype
+afterwards. CPU and CUDA replay are each qualified within a fixed runtime; draws
+are not promised to agree across devices. These native global contexts require
+serialized calls within a process; use separate worker processes for concurrent
+fitting and one process per CUDA device. The data model does not eagerly import
+Torch/sbi. Seed ensembles can be retrained and independently re-gated after an
+initial gate failure; a changed ensemble needs new provenance and a new
+calibration record.
 
 `save_npe` atomically writes native state tensors and primitive metadata;
 `load_npe(path, expected=independently_supplied_provenance)` uses weights-only
@@ -66,6 +75,18 @@ migration. Native estimator Python objects are never serialized.
 Required optional CI runs real minimum/current CPU fits, analytically specified
 mean/count embeddings and gradients, training/evaluation masking, fixed seed
 contributions, RNG restoration, provenance refusal and exact snapshot replay.
+The separate CUDA qualification test runs real native fitting, CPU-bank transfer,
+device-resident sampling, addressed replay, RNG restoration and guarded snapshot
+reconstruction:
+
+```bash
+python -c "import sbi, torch; assert torch.cuda.is_available(), 'CUDA unavailable'; print(torch.cuda.get_device_name(0))"
+pytest -q tests/test_sbi_npe_cuda.py
+```
+
+A skip is not CUDA qualification. The command requires a CUDA Torch build, sbi
+and an available `cuda:0` device. Training checkpoint/resume remains explicitly
+CPU-only; inference snapshots support the declared CPU or CUDA device.
 Scientific use additionally needs powered calibration on the intended design,
 including missing-unit strata, before using its design/recovery estimates.
 
@@ -85,9 +106,10 @@ and early stopping. Parameter standardization materializes the training **theta*
 subset, and index/sampler storage grows with the number of simulations. Batch
 activations, model/optimizer state and file-backed resident pages also use memory.
 This option removes full **observation** copies; it does not promise constant
-resident memory, GPU support, arbitrary iterators, multi-round inference or a
-one-copy bound for large parameter matrices. Inputs requiring dtype/device/layout
-conversion are refused rather than silently copied in this mode.
+resident memory, arbitrary iterators, multi-round inference or a one-copy bound
+for large parameter matrices. A borrowed bank remains on CPU while native sbi
+moves training batches to the declared CUDA device. Inputs requiring bank
+dtype/device/layout conversion are refused rather than silently copied.
 
 One separate-process synthetic run on Linux, Python 3.13, sbi 0.27.0 and
 Torch 2.14.1 CPU used an 8,192-row, 256-unit, eight-feature bank (64.06 MiB),
@@ -144,12 +166,13 @@ The upper limit preserves the existing adapter's native sbi convention:
 `until_epoch` uses that full budget. Early stopping can finish sooner; a chunk
 does not reset its patience or authorize additional training past the full budget.
 
-Checkpoints contain primitive metadata and state tensors for the last completed
-optimizer step, Adam moments, best validation weights/loss, patience counter,
-train/validation indices, loss history and Torch CPU RNG. They are captured before
-native sbi may restore best validation weights at an epoch limit. Saving only the
-returned estimator and optimizer after that restoration would pair different
-training states. Checkpoints are separate from `save_npe` inference snapshots.
+CPU training checkpoints contain primitive metadata and state tensors for the
+last completed optimizer step, Adam moments, best validation weights/loss,
+patience counter, train/validation indices, loss history and Torch CPU RNG. They
+are captured before native sbi may restore best validation weights at an epoch
+limit. Saving only the returned estimator and optimizer after that restoration
+would pair different training states. Checkpoints are separate from `save_npe`
+inference snapshots.
 
 The default saves after every completed epoch. `checkpoint_interval=k` saves
 the first epoch, every kth epoch and the requested chunk limit. Early stopping
@@ -158,7 +181,7 @@ replaces it. Saving uses an atomic file replacement. A failed write preserves
 the preceding checkpoint, though durable storage across machine/power failures
 still depends on the filesystem.
 
-Resume refuses changed scientific provenance, settings, exact runtime versions,
+CPU resume refuses changed scientific provenance, settings, exact runtime versions,
 ordered effective float32 bank content or checkpoint integrity. Paths and file
 names alone are not bank identities. No simulation bank, prior object, trainer
 or estimator Python object is pickled. This is a compatibility/integrity boundary,

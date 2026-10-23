@@ -51,7 +51,7 @@ def _provenance(settings: NpeSettings) -> Any:  # noqa: ANN401
     return provenance().model_copy(
         update={
             "estimator_settings": npe_settings_reference(settings),
-            "backend_versions": sbi_backend_versions(),
+            "backend_versions": sbi_backend_versions(device=settings.device),
         }
     )
 
@@ -210,3 +210,51 @@ def test_bounded_prior_and_incompatible_members_fail(
     )
     with pytest.raises(ValueError, match="Provenance mismatch"):
         NpeEnsemble((fits[0], replace(fits[1], provenance=different)))
+
+
+@pytest.mark.parametrize(
+    "device",
+    [
+        "cuda",
+        "cuda:-1",
+        "cuda:00",
+        "cuda:1.5",
+        "cuda:\u0660",
+        "cuda:\uff10",
+        "mps",
+    ],
+)
+def test_settings_require_cpu_or_indexed_cuda(device: str) -> None:
+    """Device identity cannot depend on an ambient CUDA selection."""
+    with pytest.raises(ValueError, match="device"):
+        _settings(device=device)
+
+
+def test_default_cpu_serialization_remains_backward_compatible() -> None:
+    """The new CPU default preserves existing settings and artifact identities."""
+    assert "device" not in _settings().model_dump()
+    assert _settings(device="cuda:0").model_dump()["device"] == "cuda:0"
+
+
+def test_oversized_cuda_index_has_a_stable_adapter_error() -> None:
+    """Backend parser limits cannot leak a backend-specific exception."""
+    settings = _settings(device=f"cuda:{'9' * 100}")
+    with pytest.raises(ValueError, match="Invalid NPE device"):
+        sbi_backend_versions(device=settings.device)
+
+
+def test_unavailable_cuda_device_fails_before_training() -> None:
+    """An indexed but absent CUDA target cannot fall back to CPU."""
+    index = torch.cuda.device_count()
+    settings = _settings(device=f"cuda:{index}")
+    prior = torch.distributions.Independent(
+        torch.distributions.Normal(torch.zeros(2), torch.ones(2)), 1
+    )
+    with pytest.raises(ValueError, match="CUDA device is unavailable"):
+        fit_npe(
+            torch.zeros((16, 2)),
+            torch.zeros((16, 3, 1)),
+            prior=prior,
+            settings=settings,
+            provenance=_provenance(settings),
+        )
