@@ -5,7 +5,11 @@ loader, plus coordinate-aware native posterior samples. `forward` attaches that 
 immutable output references. The optional ArviZ adapter implements guarded DataTree/netCDF snapshots.
 `rng` implements versioned task stream addresses and default parameter/simulation separation;
 its optional adapters lower to native JAX keys and validated Torch CPU generator banks.
-The optional NumPyro adapter implements a bounded native NUTS fit with shared posterior
+`priors`, `observe` and `simulation` implement the bounded catalog of independent
+scalar or fixed-shaped iid priors and iid observation laws described in the
+statistical-model guide. General transforms, hierarchy, dependence and integrated
+likelihood interfaces remain planned. The optional NumPyro adapter implements a
+bounded native NUTS fit with shared posterior
 records and raw diagnostic outcomes. `calibrate` implements rank-based SBC aggregation (ordinary and
 randomized-rank PIT, Benjamini-Hochberg multiplicity, power floors, failed-replicate accounting and
 contraction), plus study-extra central-coverage summaries with marginal Wilson intervals (see [Rank-based calibration](calibration.md)). The native sbi adapter adds masked-cohort NPE and seed ensembles. Prespecified scalar gate criteria and records are available from `gates`
@@ -71,9 +75,5 @@ See [implemented capabilities](capabilities.md) for the current scope and extras
 ::: op_infer.readings
 
 ## Shared statistical models
-
-::: op_infer.priors
-
-::: op_infer.observe
 
 ::: op_infer.simulation

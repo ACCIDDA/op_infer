@@ -1,14 +1,16 @@
 cff-version: "1.2.0"
 message: >-
   If you use op_infer or its flepimop2 provider, please cite this software
-  and record the exact release version used in your methods.
+  as an unreleased development checkout and record the exact commit and any
+  local changes used in your methods.
 type: software
 title: "op_infer: the statistical layer of the op stack"
 abstract: >-
-  Parameter spaces, priors, observation models, posteriors with provenance,
-  calibration gates, identifiability and design studies for mechanistic
-  models, wrapping mature inference libraries, with a separately distributed
-  flepimop2 provider.
+  Provenance-bound forward and posterior records, a bounded catalog of
+  independent scalar or fixed-shaped iid priors and observation laws,
+  calibration and design workflows, and native adapters for declared subsets
+  of mature inference libraries, with a separately distributed flepimop2
+  provider.
 authors:
   - family-names: Macdonald
     given-names: Joshua

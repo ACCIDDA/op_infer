@@ -21,12 +21,17 @@ The implementation includes:
 - A separate GPL flepimop2 process provider.
 
 The package is pre-alpha (0.0.1) and unreleased. PyPI publication is on hold. The
-[capabilities and executable examples](docs/capabilities.md) distinguish
-implemented interfaces from the [architecture and planned interfaces](docs/design/proposal.md).
-Backend-neutral parameter/prior/observation catalogs, LOO/PSIS, automatic calibration-gate qualification,
-identifiability and EVSI remain planned. Other inference libraries
-have reserved extras, not implemented adapters. Implemented adapters wrap their
-native libraries; no samplers are reimplemented.
+[documentation](https://accidda.github.io/op_infer/) distinguishes implemented
+interfaces and executable examples from the planned architecture. The implemented
+surface includes a deliberately bounded catalog of five independent scalar or
+fixed-shaped iid prior families, seven iid observation-law families, scoped
+scaling assessments, fixed-independent-variance Gaussian mean information and
+local spectra. General transforms, hierarchical or dependent priors, correlated
+or AR(1) observations, general interval censoring and likelihood integration,
+LOO/PSIS, automatic calibration-gate qualification, general identifiability and
+EVSI remain planned. Other inference libraries have reserved extras, not
+implemented adapters. Implemented adapters wrap their native libraries; no
+samplers are reimplemented.
 
 ## Motivation
 
@@ -40,8 +45,8 @@ The package draws on repeated implementation work and reported failures in sever
 - importance samplers with effectively infinite variance;
 - −∞ units swamping comparisons.
 
-It aims to reduce that duplication. Some interfaces are implemented, while the
-parameter, prior and observation catalogs remain planned.
+It aims to reduce that duplication. Its implemented statistical-model surface
+is deliberately bounded; the capability guide identifies remaining interfaces.
 
 ## Development principles
 
@@ -75,6 +80,11 @@ just ci                  # format check, lint, mypy, tests, docs
 
 Optional extras: `jax`, `torch`, `numpyro`, `blackjax`, `sbi`, `pyabc`, `diagnostics`, `tarp`, `arviz`, `study`
 (trade-study), `op` (op_system + op_engine), `julia`, `pypesto`.
+
+This public repository is source-only pre-alpha software. Both distributions
+retain `Private :: Do Not Upload`; no PyPI package, GitHub release or archive
+deposit is implied. Report suspected vulnerabilities through the
+[security policy](SECURITY.md).
 
 ## Licence
 

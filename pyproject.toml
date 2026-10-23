@@ -33,6 +33,7 @@ classifiers = [
 Repository = "https://github.com/ACCIDDA/op_infer"
 Issues = "https://github.com/ACCIDDA/op_infer/issues"
 Changelog = "https://github.com/ACCIDDA/op_infer/blob/main/CHANGELOG.md"
+Documentation = "https://accidda.github.io/op_infer/"
 
 [project.optional-dependencies]
 benchmark = ["threadpoolctl>=3.6"]
@@ -50,9 +51,9 @@ diagnostics = ["arviz-stats>=1.0,<2"]
 tarp = ["tarp>=0.1.1,<0.2", "deprecation>=2.1", "tqdm>=4.66"]
 arviz = ["arviz>=1.0,<2", "xarray>=2024.11", "netcdf4>=1.7.2"]
 study = ["trade-study[parallel]>=0.4"]
-# Structural identity additionally requires the reviewed unreleased compiler source;
-# see docs/forward-models.md until the next op_system release includes it.
-op = ["op_system>=0.9", "op_engine>=0.8"]
+# Released floors containing the structural-identity and sensitivity interfaces
+# required by the OP bridges.
+op = ["op_system>=0.10.0", "op_engine>=0.9.0"]
 # Identifiability bridges
 julia = ["juliacall>=0.9"]
 pypesto = ["pypesto>=0.5"]

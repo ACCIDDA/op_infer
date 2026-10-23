@@ -228,11 +228,10 @@ jobs:
       - uses: 'astral-sh/setup-uv@v7.2.0'
         with:
           python-version: '3.12'
-      - name: 'Install qualified compiler identity source and CPU backends'
+      - name: 'Install released OP floors and CPU backends'
         run: |
           uv sync --dev --extra study --extra op --extra jax
-          uv pip install 'op-system @ git+https://github.com/ACCIDDA/op_system@ad3c28ac63e9af3b1210413a764b44a9c9bd2074'
-          uv pip install 'op-engine @ git+https://github.com/ACCIDDA/op_engine@2b8d46a2b7a6c3ee2645c4d595be7d224c52433a'
+          uv pip install 'op-system==0.10.0' 'op-engine==0.9.0'
           uv pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.6'
       - run: 'just qualify-forward'
       - run: 'just qualify-identify'
