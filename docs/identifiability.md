@@ -111,7 +111,8 @@ Jacobian is not a measured-mean parameter sensitivity or a Fisher matrix.
 ## Qualification
 
 `just qualify-identify` requires actual compiler derivatives, engine forward
-sensitivities, JAX and Torch. CI pins immutable reviewed compiler/engine sources.
+sensitivities, JAX and Torch. The lowest-dependency CI lane installs the exact
+released interface floors, `op-system==0.10.0` and `op-engine==0.9.0`.
 The independent references cover unequal noise, masked NaNs, native dtype and
 gradients, matrix/rank guards, source/layout mismatches and a measured ODE
 response with both initial-only and measurement-only parameters. A nonlinear

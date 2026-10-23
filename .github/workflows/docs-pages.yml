@@ -5,11 +5,10 @@ name: 'Documentation Pages'
   push:
     branches:
       - 'main'
-  workflow_dispatch:
 
 concurrency:
   group: 'pages'
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: 'read'

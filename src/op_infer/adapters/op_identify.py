@@ -111,7 +111,7 @@ def _solution(value: object) -> Any:  # noqa: ANN401
     try:
         module = importlib.import_module("op_engine.sensitivities")
     except ImportError as error:
-        msg = "Install the reviewed op_engine source providing forward sensitivities"
+        msg = "Install op_engine>=0.9.0, which provides forward sensitivities"
         raise ImportError(msg) from error
     if not isinstance(value, module.SensitivitySolution):
         msg = "Expected the qualified engine SensitivitySolution contract"

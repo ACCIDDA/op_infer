@@ -13,7 +13,8 @@ bounded native NUTS fit with shared posterior
 records and raw diagnostic outcomes. `calibrate` implements rank-based SBC aggregation (ordinary and
 randomized-rank PIT, Benjamini-Hochberg multiplicity, power floors, failed-replicate accounting and
 contraction), plus study-extra central-coverage summaries with marginal Wilson intervals (see [Rank-based calibration](calibration.md)). The native sbi adapter adds masked-cohort NPE and seed ensembles. Prespecified scalar gate criteria and records are available from `gates`
-and re-exported by `calibrate`. Other statistical modules/adapters remain planned. `sbc` schedules replayable fixed banks and
+and re-exported by `calibrate`. Other estimator adapters and the reserved advanced
+statistical interfaces listed in the capability guide remain planned. `sbc` schedules replayable fixed banks and
 `design` composes held-out refits with aligned unit-score contrasts from `compare`.
 See [implemented capabilities](capabilities.md) for the current scope and extras.
 

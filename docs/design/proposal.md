@@ -34,12 +34,16 @@ Rank aggregation, central-interval coverage, optional TARP curves, named MCMC
 diagnostics and saved scalar criteria have separate documented scopes. A finite
 diagnostic or a saved criterion does not certify inference accuracy.
 
-## Planned statistical interfaces
+## Implemented and planned statistical interfaces
 
-Parameter spaces will declare names, shapes, support and coordinate transforms.
-Declarative priors and observation families will share definitions between
-simulation and likelihood evaluation, with explicit backend lowerings and
-independent support, density, moment and derivative conformance checks.
+The implemented bounded catalog supplies five independent scalar or fixed-shaped
+IID prior families and seven IID observation-law families. The same observation
+objects define simulation and likelihood evaluation for their documented scopes,
+with explicit backend lowerings and independent conformance checks.
+
+General parameter spaces that declare names, shapes, support and coordinate
+transforms remain planned. So do transformed, hierarchical and dependent prior or
+observation structures beyond the bounded independent/IID catalog.
 
 Further planned work includes per-unit integrated likelihoods, LOO/PSIS, profile
 likelihood and optional structural-identifiability interoperability. Each addition

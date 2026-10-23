@@ -66,7 +66,7 @@ interfaces; consult the capability guide for current support.
 
 | Path | Contents |
 |---|---|
-| `src/op_infer/` | MIT core: provenance/posteriors, `forward`, `rng`, `calibrate`, `sbc`, `compare`, `design`, optional `adapters`; other statistical modules are design placeholders |
+| `src/op_infer/` | MIT core: provenance/posteriors, `forward`, `rng`, bounded `priors` and `observe` catalogs, `calibrate`, `sbc`, `compare`, `design`, optional `adapters`; unimplemented reserved surfaces remain design placeholders |
 | `flepimop2-op_infer/` | GPL-3.0-or-later flepimop2 provider (process and parameter modules), as for `flepimop2-op_system` and `flepimop2-op_engine` |
 | `docs/design/proposal.md` | Package architecture and planned interfaces |
 
