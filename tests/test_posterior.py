@@ -201,6 +201,10 @@ def test_mutable_collections_are_refused() -> None:
 
 def test_optional_adapter_is_importable_in_core_install() -> None:
     """Core CI has no optional backends or I/O dependencies installed."""
-    from op_infer.adapters.arviz import from_arviz, load_netcdf, to_arviz  # noqa: PLC0415
+    from op_infer.adapters.arviz import (  # noqa: PLC0415
+        from_arviz,
+        load_netcdf,
+        to_arviz,
+    )
 
     assert all(callable(function) for function in (to_arviz, from_arviz, load_netcdf))

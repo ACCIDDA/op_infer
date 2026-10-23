@@ -329,7 +329,11 @@ class DesignStudy:
             ValueError: Task addresses or existing provenance are invalid.
         """
         try:
-            from trade_study import Direction, Observable, run_grid  # noqa: PLC0415 - optional dependency
+            from trade_study import (  # noqa: PLC0415 - optional dependency
+                Direction,
+                Observable,
+                run_grid,
+            )
         except ImportError as error:
             msg = "DesignStudy requires pip install 'op_infer[study]'"
             raise ImportError(msg) from error
@@ -396,7 +400,10 @@ class DesignStudy:
         Raises:
             ValueError: No planned IDs exist or artifact provenance differs.
         """
-        from trade_study import ResultsTable, proportion_interval  # noqa: PLC0415 - optional dependency
+        from trade_study import (  # noqa: PLC0415 - optional dependency
+            ResultsTable,
+            proportion_interval,
+        )
 
         ids = tuple(replicate_ids)
         if not ids or len(set(ids)) != len(ids):

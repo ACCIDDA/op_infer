@@ -299,7 +299,11 @@ def run_sbc(  # noqa: PLR0913 - explicit scientific callbacks and artifact contr
         ValueError: The contract is invalid or existing artifacts disagree.
     """
     try:
-        from trade_study import Direction, Observable, run_grid  # noqa: PLC0415 - optional extra
+        from trade_study import (  # noqa: PLC0415 - optional extra
+            Direction,
+            Observable,
+            run_grid,
+        )
     except ImportError as error:
         msg = "SBC execution requires pip install 'op_infer[study]'"
         raise ImportError(msg) from error
