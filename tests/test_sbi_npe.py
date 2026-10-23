@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import json
+import subprocess
+import sys
 from dataclasses import replace
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -23,8 +27,6 @@ from op_infer.rng import RandomKey
 from tests.test_provenance import provenance, reference
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from torch import Tensor
 
 torch = pytest.importorskip("torch")
@@ -258,3 +260,56 @@ def test_unavailable_cuda_device_fails_before_training() -> None:
             settings=settings,
             provenance=_provenance(settings),
         )
+
+
+def test_fixed_work_benchmark_executes_a_real_cpu_worker(tmp_path: Path) -> None:
+    """The retained worker must execute native fitting rather than a skipped stub."""
+    root = Path(__file__).parents[1]
+    output = tmp_path / "worker.json"
+    subprocess.run(  # noqa: S603
+        [
+            sys.executable,
+            str(root / "examples" / "benchmark_npe_pipeline.py"),
+            str(tmp_path / "bank"),
+            "--worker",
+            "--device",
+            "cpu",
+            "--storage",
+            "mapped",
+            "--stage",
+            "train",
+            "--worker-output",
+            str(output),
+            "--rows",
+            "96",
+            "--units",
+            "3",
+            "--features",
+            "1",
+            "--max-epochs",
+            "1",
+            "--batch-size",
+            "32",
+            "--sample-draws",
+            "8",
+            "--calibration-replicates",
+            "2",
+            "--calibration-draws",
+            "8",
+        ],
+        check=True,
+        cwd=root,
+    )
+    record = json.loads(output.read_text())
+    assert record["completed_epochs"] == 2
+    assert len(record["training_trace"]["train_epochs"]) == 2
+    assert record["training_trace"]["split_digests"]
+    assert record["workload"]["sample_draws"] == 8
+    assert "op_infer/rng.py" in record["source_identity"]["manifest"]
+    assert record["source_identity"]["reference"]["kind"] == "source-manifest-v1"
+    assert record["draw_digest"].startswith("sha256:")
+    assert record["calibration_timing_only"]["replicates"] == 2
+    assert record["bank_digests_verified_after_execution"] == {
+        "theta": record["manifest"]["theta"]["digest"],
+        "observations": record["manifest"]["observations"]["digest"],
+    }

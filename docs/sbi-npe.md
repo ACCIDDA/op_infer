@@ -201,3 +201,8 @@ the result with an uninterrupted process at current and minimum Torch versions.
 Tests also compare native and borrowed storage, optimizer moments, splits,
 losses and RNG, including interruption and native early stopping. These checks
 establish execution replay on the stated boundary, not scientific calibration.
+
+For fresh-process CPU/CUDA phase timing, storage comparisons, phase-local memory
+records and the retained limitations, use the separate
+[fixed-work NPE performance pilot](npe-performance.md). It does not change this
+adapter's scientific qualification or checkpoint boundary.

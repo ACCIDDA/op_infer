@@ -37,6 +37,8 @@ nav:
   - Native NumPyro NUTS: numpyro.md
   - Named MCMC diagnostics: mcmc-diagnostics.md
   - Native masked NPE: sbi-npe.md
+  - Fixed-work NPE performance pilot: npe-performance.md
+  - Fixed-work NPE pilot result (2026-10-23): npe-performance-results-2026-10-23.md
   - Rank-based calibration (SBC): calibration.md
   - Coverage planning and TARP: coverage-planning.md
   - Saved gate records: gates.md
