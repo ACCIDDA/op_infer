@@ -1,0 +1,116 @@
+{
+  "schema": "op-infer-npe-fixed-work-public-summary-v1",
+  "raw_journal_digest": "sha256:28a4ec0cc12ed9804b9661dc016950fcbea5ea080eee6f598c1daf121edf5106",
+  "source": {
+    "harness_digest": "sha256:4b39137576faef56658ed12a21247ab6705ca6297bb7f64a48df4663752af504",
+    "manifest_reference": "sha256:9d75ff148f2bf5c2598cab649f6cbb3c273158158ae40c4b17bb54186728a8f0",
+    "files": 32
+  },
+  "environment": {
+    "platform": "Linux-7.1.1-76070101-generic-x86_64-with-glibc2.35",
+    "python": "3.12.15",
+    "numpy": "2.5.3",
+    "sbi": "0.27.0",
+    "torch": "2.14.1",
+    "cuda_runtime": "13.0",
+    "cuda_device": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+    "cuda_compute_capability": "12.0",
+    "nvidia_driver": "580.173.02",
+    "numa_nodes_online": "0",
+    "filesystem": "ext4",
+    "compute_affinity": [7],
+    "monitor_affinity": [8],
+    "torch_threads": 1,
+    "shared_cgroup": true
+  },
+  "units": {
+    "elapsed": "seconds",
+    "process_memory": "MiB",
+    "cuda_allocator_memory": "MiB"
+  },
+  "conditions": [
+    {
+      "device": "cpu",
+      "storage": "ordinary",
+      "repetitions": 5,
+      "fit": {"median": 2.374519, "min": 2.310776, "max": 2.400403},
+      "cold_epoch": {"median": 0.468641, "min": 0.405189, "max": 0.528233},
+      "warm_epoch": {"median": 0.176879, "min": 0.173871, "max": 0.181637},
+      "fit_peak_rss": {"median": 1110.438, "min": 1109.965, "max": 1118.430},
+      "fit_peak_pss": {"median": 1096.993, "min": 1096.511, "max": 1104.958},
+      "fit_peak_uss": {"median": 1087.559, "min": 1087.063, "max": 1095.504}
+    },
+    {
+      "device": "cpu",
+      "storage": "borrowed",
+      "repetitions": 5,
+      "fit": {"median": 1.787179, "min": 1.686450, "max": 1.828394},
+      "cold_epoch": {"median": 0.498010, "min": 0.463156, "max": 0.575133},
+      "warm_epoch": {"median": 0.177579, "min": 0.172301, "max": 0.181484},
+      "fit_peak_rss": {"median": 981.414, "min": 980.762, "max": 984.328},
+      "fit_peak_pss": {"median": 968.006, "min": 967.395, "max": 970.915},
+      "fit_peak_uss": {"median": 958.590, "min": 958.020, "max": 961.508}
+    },
+    {
+      "device": "cpu",
+      "storage": "mapped",
+      "repetitions": 5,
+      "fit": {"median": 1.755844, "min": 1.666077, "max": 1.785524},
+      "cold_epoch": {"median": 0.497438, "min": 0.429580, "max": 0.524924},
+      "warm_epoch": {"median": 0.176833, "min": 0.172912, "max": 0.182200},
+      "fit_peak_rss": {"median": 981.383, "min": 981.344, "max": 982.789},
+      "fit_peak_pss": {"median": 967.952, "min": 967.918, "max": 969.378},
+      "fit_peak_uss": {"median": 958.512, "min": 958.469, "max": 959.949}
+    },
+    {
+      "device": "cuda:0",
+      "storage": "ordinary",
+      "repetitions": 5,
+      "fit": {"median": 2.624862, "min": 2.599395, "max": 2.721939},
+      "cold_epoch": {"median": 0.655904, "min": 0.647689, "max": 0.666504},
+      "warm_epoch": {"median": 0.142848, "min": 0.128455, "max": 0.149118},
+      "fit_peak_rss": {"median": 2167.910, "min": 2160.449, "max": 2171.465},
+      "fit_peak_pss": {"median": 2154.523, "min": 2147.033, "max": 2158.062},
+      "fit_peak_uss": {"median": 2145.113, "min": 2137.609, "max": 2148.656},
+      "fit_cuda_allocated": {"median": 68.338, "min": 68.338, "max": 68.338},
+      "fit_cuda_reserved": {"median": 70.0, "min": 70.0, "max": 70.0}
+    },
+    {
+      "device": "cuda:0",
+      "storage": "borrowed",
+      "repetitions": 5,
+      "fit": {"median": 2.035132, "min": 1.983659, "max": 2.136485},
+      "cold_epoch": {"median": 0.650151, "min": 0.645680, "max": 0.679722},
+      "warm_epoch": {"median": 0.137115, "min": 0.129605, "max": 0.147300},
+      "fit_peak_rss": {"median": 2030.504, "min": 2028.953, "max": 2031.852},
+      "fit_peak_pss": {"median": 2017.086, "min": 2015.540, "max": 2018.483},
+      "fit_peak_uss": {"median": 2007.645, "min": 2006.094, "max": 2009.098},
+      "fit_cuda_allocated": {"median": 68.338, "min": 68.338, "max": 68.338},
+      "fit_cuda_reserved": {"median": 70.0, "min": 70.0, "max": 70.0}
+    },
+    {
+      "device": "cuda:0",
+      "storage": "mapped",
+      "repetitions": 5,
+      "fit": {"median": 2.050127, "min": 2.007812, "max": 2.109192},
+      "cold_epoch": {"median": 0.652985, "min": 0.632643, "max": 0.677098},
+      "warm_epoch": {"median": 0.136604, "min": 0.132333, "max": 0.143028},
+      "fit_peak_rss": {"median": 2030.605, "min": 2030.438, "max": 2031.570},
+      "fit_peak_pss": {"median": 2017.174, "min": 2016.996, "max": 2018.168},
+      "fit_peak_uss": {"median": 2007.797, "min": 2007.559, "max": 2008.738},
+      "fit_cuda_allocated": {"median": 68.338, "min": 68.338, "max": 68.338},
+      "fit_cuda_reserved": {"median": 70.0, "min": 70.0, "max": 70.0}
+    }
+  ],
+  "cpu_checkpoint_resume": {
+    "workers": 15,
+    "restore_seconds": {"median": 0.631793, "min": 0.600799, "max": 0.662265},
+    "checkpoint_bytes": {"median": 116557, "min": 116557, "max": 116557}
+  },
+  "checkpoint_writes": {
+    "writes": 120,
+    "seconds": {"median": 0.001550, "min": 0.001435, "max": 0.002080},
+    "bytes": {"median": 116557, "min": 116493, "max": 116621}
+  },
+  "interpretation": "Descriptive, instrumented one-host observations only; no CPU/GPU speedup, application-performance, calibration or cross-node claim."
+}

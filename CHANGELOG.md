@@ -30,6 +30,14 @@
 
 ### Documentation
 
+- Add a fresh-process fixed-work NPE performance harness with explicit CPU/CUDA
+  and bank-storage conditions, instrumented phase and epoch timing,
+  process/device/cgroup memory records, immutable source/data identities, CPU
+  resume equivalence and guarded inference replay. Its local pilot is descriptive
+  and does not close cross-node, shared-storage, calibration or application
+  qualification. Retain the independently reviewed 23 October workstation pilot
+  as a sanitized result summary with exact raw-journal and source identities.
+
 - Record forward/provenance, shared prior/observation, backend and scoped
   identifiability interfaces, with explicit downstream statistical-method gates.
 

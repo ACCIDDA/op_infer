@@ -1,0 +1,93 @@
+{
+  "cases": 75,
+  "conditions": [
+    {
+      "descriptive_only": true,
+      "device": "cpu",
+      "instrumented_fit_seconds_median": 1.7871791639990988,
+      "instrumented_fit_seconds_range": [1.6864503460019478, 1.8283936209991225],
+      "instrumented_train_epoch_seconds_median": 0.17832892400110723,
+      "repetitions": 5,
+      "storage": "borrowed"
+    },
+    {
+      "descriptive_only": true,
+      "device": "cpu",
+      "instrumented_fit_seconds_median": 1.755844489998708,
+      "instrumented_fit_seconds_range": [1.6660769950030954, 1.7855244879974634],
+      "instrumented_train_epoch_seconds_median": 0.17770943299910869,
+      "repetitions": 5,
+      "storage": "mapped"
+    },
+    {
+      "descriptive_only": true,
+      "device": "cpu",
+      "instrumented_fit_seconds_median": 2.374518641998293,
+      "instrumented_fit_seconds_range": [2.3107757609977853, 2.400403166997421],
+      "instrumented_train_epoch_seconds_median": 0.17882716549866018,
+      "repetitions": 5,
+      "storage": "ordinary"
+    },
+    {
+      "descriptive_only": true,
+      "device": "cuda:0",
+      "instrumented_fit_seconds_median": 2.0351320459958515,
+      "instrumented_fit_seconds_range": [1.9836592909996398, 2.136485080998682],
+      "instrumented_train_epoch_seconds_median": 0.14036221350033884,
+      "repetitions": 5,
+      "storage": "borrowed"
+    },
+    {
+      "descriptive_only": true,
+      "device": "cuda:0",
+      "instrumented_fit_seconds_median": 2.0501271539978916,
+      "instrumented_fit_seconds_range": [2.0078124009960447, 2.109192310999788],
+      "instrumented_train_epoch_seconds_median": 0.13780524150206475,
+      "repetitions": 5,
+      "storage": "mapped"
+    },
+    {
+      "descriptive_only": true,
+      "device": "cuda:0",
+      "instrumented_fit_seconds_median": 2.6248617359960917,
+      "instrumented_fit_seconds_range": [2.5993949149997206, 2.721939150003891],
+      "instrumented_train_epoch_seconds_median": 0.14532130799852894,
+      "repetitions": 5,
+      "storage": "ordinary"
+    }
+  ],
+  "limitations": [
+    "fixed synthetic work on one host; no application or speedup claim",
+    "elapsed phases include a 10 ms monitor on a distinct declared CPU",
+    "fixed-seed repeats measure execution variation, including runtime nondeterminism, not statistical uncertainty",
+    "calibration phase is an underpowered timing smoke only",
+    "CPU checkpoints and CUDA inference snapshots have different scopes"
+  ],
+  "manifest": {
+    "dtype": "float32",
+    "features": 8,
+    "observations": {
+      "bytes": 67108992,
+      "digest": "sha256:35333c7f6e65b98a304f384afd6ad74fd5e1afdcea91d0e4b1bb1bcdf7cc4b82"
+    },
+    "parameters": 2,
+    "rows": 8192,
+    "schema": "op-infer-npe-fixed-work-v1",
+    "seed": 51,
+    "theta": {
+      "bytes": 65664,
+      "digest": "sha256:dad29f7a63d111bf090c8ed5463cf7e147cfb03ee4a535d0258b6d5a7ee1298c"
+    },
+    "units": 256
+  },
+  "results_digest": "sha256:28a4ec0cc12ed9804b9661dc016950fcbea5ea080eee6f598c1daf121edf5106",
+  "schema": "op-infer-npe-fixed-work-v1",
+  "validations": {
+    "checkpoint_resume_equivalence": "exact network/optimizer/split/loss/RNG state for every CPU storage/replicate pair; measured epoch durations excluded",
+    "completed_epoch_counts": "verified for every worker",
+    "cpu_full_budget_equivalence": "exact final fit state across train, checkpoint-full and resume paths",
+    "source_identity": "one exact source-byte reference across every worker",
+    "split_identity": "exact across every repetition, device, stage and storage",
+    "within_device_storage_equivalence": "exact epoch RNG trace and final fit state for every stage"
+  }
+}
