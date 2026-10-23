@@ -26,7 +26,7 @@ qualify-numerical:
 	uv run --no-sync python -c 'import op_engine, jax, torch'
 	uv run --no-sync pytest tests/test_numerical_reference.py
 
-# Requires the reviewed structural-identity compiler revision until its release.
+# Requires the released OP floors declared by the ``op`` extra.
 qualify-forward:
 	uv run --no-sync python -c 'from op_system import StructuralModelIdentity; import op_engine, jax, torch, trade_study'
 	uv run --no-sync mypy

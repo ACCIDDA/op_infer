@@ -1,9 +1,11 @@
 # Random streams
 
 `op_infer.rng` provides explicit task addresses around native random generators.
-Estimator adapters and the [SBC runner](sbc-runner.md) consume these addresses.
-Backend-neutral prior and observation catalogs remain planned. Stable task
-identities preserve the separation of parameter and simulation streams.
+Estimator adapters, the implemented bounded catalog of five independent scalar or
+fixed-shaped IID prior families, the seven IID observation-law families and the
+[SBC runner](sbc-runner.md) consume these addresses. Transformed, hierarchical and
+dependent prior or observation structures remain planned. Stable task identities
+preserve the separation of parameter and simulation streams.
 
 ## Default parameter and simulation separation
 

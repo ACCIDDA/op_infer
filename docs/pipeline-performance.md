@@ -78,12 +78,12 @@ allocation saving.
 
 ## Reproduce
 
-Install the optional numerical stack and the reviewed compiler identity source
-as described in [forward models](forward-models.md), plus the benchmark reporter:
+Install the optional numerical stack and released OP dependency floors described
+in [forward models](forward-models.md), plus the benchmark reporter:
 
 ```shell
 uv sync --dev --extra op --extra numpyro --extra benchmark
-uv pip install 'op-system @ git+https://github.com/ACCIDDA/op_system@4c054694f7cfd4774a3e9abfdefc93551d4f7126'
+uv pip install 'op-system==0.10.0' 'op-engine==0.9.0'
 uv pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.6'
 uv run --no-sync python examples/benchmark_statistical_pipeline.py \
   --output /tmp/pipeline-comparison.json --repetitions 3 --warm-repeats 5 --timeout 120

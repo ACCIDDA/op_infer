@@ -1,0 +1,55 @@
+---
+name: 'Documentation Pages'
+
+'on':
+  push:
+    branches:
+      - 'main'
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+permissions:
+  contents: 'read'
+
+jobs:
+  build:
+    name: 'Build reviewed public documentation'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout repository'
+        uses: 'actions/checkout@v6'
+        with:
+          persist-credentials: false
+      - name: 'Setup uv with Python 3.12'
+        uses: 'astral-sh/setup-uv@v7.2.0'
+        with:
+          enable-cache: true
+          cache-dependency-glob: 'pyproject.toml'
+          python-version: '3.12'
+      - name: 'Install documentation dependencies'
+        run: 'uv sync --dev'
+      - name: 'Build strict documentation'
+        run: 'uv run mkdocs build --strict'
+      - name: 'Configure GitHub Pages'
+        uses: 'actions/configure-pages@v5'
+      - name: 'Upload documentation artifact'
+        uses: 'actions/upload-pages-artifact@v4'
+        with:
+          path: 'site'
+
+  deploy:
+    name: 'Deploy reviewed public documentation'
+    needs: 'build'
+    runs-on: 'ubuntu-latest'
+    environment:
+      name: 'github-pages'
+      url: '${{ steps.deployment.outputs.page_url }}'
+    permissions:
+      pages: 'write'
+      id-token: 'write'
+    steps:
+      - name: 'Deploy to GitHub Pages'
+        id: 'deployment'
+        uses: 'actions/deploy-pages@v4'

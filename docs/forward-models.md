@@ -58,12 +58,13 @@ and chunking remain explicit caller choices; no unbounded batching API is added.
 
 ## Reproduce the complete example
 
-The compiler identity API is on reviewed op_system main, beyond the archived
-0.9.0 tag. Until a release contains it, use the exact qualified source revision:
+The compiler identity API is available in OP System 0.10.0, and the sensitivity
+interface used by the local-information bridge is available in OP Engine 0.9.0.
+The released dependency floors are therefore sufficient for this qualification:
 
 ```shell
 uv sync --dev --extra study --extra op --extra jax
-uv pip install 'op-system @ git+https://github.com/ACCIDDA/op_system@4c054694f7cfd4774a3e9abfdefc93551d4f7126'
+uv pip install 'op-system==0.10.0' 'op-engine==0.9.0'
 uv pip install --index-url https://download.pytorch.org/whl/cpu 'torch>=2.6'
 just qualify-forward
 ```
