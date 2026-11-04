@@ -51,6 +51,10 @@
 
 ### Fixed
 
+- Reject scheduled state maps in `compiled_forward` instead of silently
+  integrating only the continuous equations. Empty declarations and older
+  compiler artifacts without events retain their existing behavior (#66).
+
 - Prevent an unrepresentable lower Normal tail from contaminating a central
   bin's native gradient. Symmetric intervals and finite upper-boundary checks
   cover JAX/Torch at very small noise scales.
