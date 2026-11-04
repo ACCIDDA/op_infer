@@ -8,6 +8,7 @@ sampling and density kernels. Correlated observations are not silently iid.
 from __future__ import annotations
 
 import importlib
+import itertools
 import json
 from typing import Annotated, Any, Literal, Protocol, Self
 
@@ -18,7 +19,7 @@ from op_infer.posterior import ArtifactReference
 from op_infer.priors import _backend, _Record, _validate_sample_shape
 from op_infer.rng import RandomKey
 
-__all__ = ["IIDObservation", "ObservationModel"]
+__all__ = ["BinnedNormalObservation", "IIDObservation", "ObservationModel"]
 
 type _Positive = Annotated[float, Field(gt=0, allow_inf_nan=False)]
 type _Finite = Annotated[float, Field(allow_inf_nan=False)]
@@ -49,6 +50,175 @@ class ObservationModel(Protocol):
     ) -> Any:  # noqa: ANN401
         """Draw addressed native measurements without changing global RNG state."""
         ...
+
+
+class BinnedNormalObservation(_Record):
+    """Record a Normal measurement as an interval code on a fixed partition.
+
+    With ``K`` finite, strictly increasing cutpoints, codes ``0, ..., K``
+    denote ``(-inf, c[0])``, ``[c[0], c[1])``, ..., ``[c[K-1], inf)``.
+    Cutpoints use measurement coordinates, whose Normal mean is
+    ``offset + slope * latent`` and standard deviation is ``scale``.
+    Codes are labels, not interval midpoints or numerical measurements.
+
+    Sampling quantizes the existing native Normal sampler. Scoring returns
+    interval probability mass, including both open tails. Invalid codes or
+    nonfinite means score as impossible; masked cells contribute zero even
+    when missing values are NaN. A common partition applies to every cell.
+    Per-cell partitions, correlated errors and explicit curvature interfaces
+    are outside this law.
+
+    Examples:
+        >>> import numpy as np
+        >>> sensor = BinnedNormalObservation(cutpoints=(-1.0, 1.0))
+        >>> np.exp(sensor.log_prob(np.array(0.0), np.arange(3))).round(6)
+        array([0.158655, 0.682689, 0.158655])
+    """
+
+    cutpoints: Annotated[tuple[_Finite, ...], Field(min_length=1)]
+    scale: _Positive = 1.0
+    offset: _Finite = 0.0
+    slope: _Finite = 1.0
+
+    @model_validator(mode="after")
+    def _ordered_cutpoints(self) -> Self:
+        if any(a >= b for a, b in itertools.pairwise(self.cutpoints)):
+            msg = "Normal bin cutpoints must be strictly increasing"
+            raise ValueError(msg)
+        return self
+
+    @property
+    def reference(self) -> ArtifactReference:
+        """Identify the partition, boundary convention, affine map and noise."""
+        data = {
+            "schema_version": 1,
+            "family": "normal",
+            "dependence": "iid",
+            "mask": "true-is-observed",
+            "observation": "zero-based-bin-code",
+            "intervals": "left-closed-right-open-with-infinite-end-tails",
+            "parameters": self.model_dump(mode="json"),
+        }
+        payload = json.dumps(
+            data, sort_keys=True, separators=(",", ":"), allow_nan=False
+        )
+        return ArtifactReference.from_bytes(
+            payload.encode(), kind="binned-normal-observation-v1"
+        )
+
+    def log_prob(self, latent: Any, observed: Any, *, mask: Any = None) -> Any:  # noqa: ANN401
+        """Score integer-valued bin codes with native tail-stable probabilities.
+
+        Integer and real floating code arrays are accepted; fractional,
+        negative, nonfinite and out-of-range codes receive ``-inf``. Masks
+        must be native boolean arrays with exactly the broadcast shape.
+        Native JAX/Torch derivatives are with respect to the latent input.
+        Choose precision that resolves cutpoints, standardized separation and
+        log-CDF differences. Very narrow intervals can lose relative accuracy;
+        differences that collapse in that precision have zero computed mass.
+        """
+        xp = array_namespace(latent, observed)
+        backend = _backend(xp)
+        if not xp.isdtype(latent.dtype, "real floating"):
+            msg = "Observation latent values must have real floating dtype"
+            raise TypeError(msg)
+        if not xp.isdtype(observed.dtype, ("integral", "real floating")):
+            msg = "Normal bin codes must have integer or real floating dtype"
+            raise TypeError(msg)
+        mean, code = xp.broadcast_arrays(self.offset + self.slope * latent, observed)
+        selected = xp.ones_like(mean, dtype=xp.bool) if mask is None else mask
+        if (
+            array_namespace(selected).__name__ != xp.__name__
+            or selected.dtype != xp.bool
+            or tuple(selected.shape) != tuple(mean.shape)
+        ):
+            msg = "Observation mask must be native boolean with the broadcast shape"
+            raise ValueError(msg)
+        valid = xp.isfinite(mean)
+        mean = xp.where(selected & valid, mean, xp.zeros_like(mean))
+        code = xp.where(selected, code, xp.zeros_like(code))
+        valid = (
+            valid
+            & xp.isfinite(code)
+            & (code >= 0)
+            & (code <= len(self.cutpoints))
+            & (code == xp.floor(code))
+        )
+        interior = valid & (code > 0) & (code < len(self.cutpoints))
+        lower, upper = -xp.ones_like(mean), xp.ones_like(mean)
+        for index, (left, right) in enumerate(
+            itertools.pairwise(self.cutpoints), start=1
+        ):
+            lower = xp.where(code == index, xp.full_like(mean, left), lower)
+            upper = xp.where(code == index, xp.full_like(mean, right), upper)
+        center = xp.where(interior, mean, xp.zeros_like(mean))
+        lower = (lower - center) / self.scale
+        upper = (upper - center) / self.scale
+        # Reflect right-tail intervals before subtraction; never subtract CDFs
+        # rounded to one. Inactive open tails retain finite dummy endpoints.
+        reflected = lower > 0
+        low = xp.where(reflected, -upper, lower)
+        high = xp.where(reflected, -lower, upper)
+        special = importlib.import_module(
+            {
+                "numpy": "scipy.special",
+                "jax": "jax.scipy.special",
+                "torch": "torch.special",
+            }[backend]
+        )
+        log_high = special.log_ndtr(high)
+        # For intervals crossing the mean, a lower tail below -40 standard
+        # deviations has less mass than float64 can represent. Do not evaluate
+        # its native backward kernel: its undefined derivative can otherwise
+        # contaminate an exactly saturated interval through zero times infinity.
+        negligible_lower_tail = (low < -40) & (high >= 0)
+        safe_low = xp.where(negligible_lower_tail, xp.zeros_like(low), low)
+        difference = special.log_ndtr(safe_low) - log_high
+        resolved = difference < 0
+        safe_difference = xp.where(resolved, difference, -xp.ones_like(mean))
+        density = xp.where(
+            resolved, log_high + xp.log(-xp.expm1(safe_difference)), -xp.inf
+        )
+        density = xp.where(negligible_lower_tail, log_high, density)
+        left_mean = xp.where(code == 0, mean, xp.full_like(mean, self.cutpoints[0]))
+        right_mean = xp.where(
+            code == len(self.cutpoints),
+            mean,
+            xp.full_like(mean, self.cutpoints[-1]),
+        )
+        density = xp.where(
+            code == 0,
+            special.log_ndtr((self.cutpoints[0] - left_mean) / self.scale),
+            density,
+        )
+        density = xp.where(
+            code == len(self.cutpoints),
+            special.log_ndtr((right_mean - self.cutpoints[-1]) / self.scale),
+            density,
+        )
+        return xp.where(selected, xp.where(valid, density, -xp.inf), 0.0)
+
+    def sample(
+        self,
+        latent: Any,  # noqa: ANN401
+        key: Any,  # noqa: ANN401
+        *,
+        sample_shape: tuple[int, ...] = (),
+    ) -> Any:  # noqa: ANN401
+        """Quantize addressed native Normal draws, returning latent float dtype.
+
+        A draw exactly on a cutpoint enters the higher bin. Replay, leading
+        sample axes and local-generator semantics are those of IIDObservation.
+        Nonfinite underlying draws remain NaN, never valid-looking bin codes.
+        """
+        draws = IIDObservation(
+            family="normal", scale=self.scale, offset=self.offset, slope=self.slope
+        ).sample(latent, key, sample_shape=sample_shape)
+        xp = array_namespace(draws)
+        codes = xp.zeros_like(draws)
+        for cutpoint in self.cutpoints:
+            codes = codes + xp.astype(draws >= cutpoint, draws.dtype)
+        return xp.where(xp.isfinite(draws), codes, xp.full_like(draws, xp.nan))
 
 
 class IIDObservation(_Record):

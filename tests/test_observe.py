@@ -5,9 +5,9 @@ import math
 import numpy as np
 import pytest
 from pydantic import ValidationError
-from scipy import stats
+from scipy import integrate, stats
 
-from op_infer.observe import IIDObservation
+from op_infer.observe import BinnedNormalObservation, IIDObservation
 from op_infer.rng import RandomKey
 
 
@@ -108,4 +108,114 @@ def test_counts_reject_fractional_and_out_of_support_measurements() -> None:
     assert (
         IIDObservation(family="normal").reference
         != IIDObservation(family="normal", scale=2.0).reference
+    )
+
+
+@pytest.mark.parametrize(
+    "cutpoints", [(), (1.0, 1.0), (2.0, 1.0), (np.inf,), (np.nan,)]
+)
+def test_binned_normal_requires_a_finite_ordered_partition(
+    cutpoints: tuple[float, ...],
+) -> None:
+    """An immutable, nonempty partition identifies one generative measurement law."""
+    with pytest.raises(ValidationError):
+        BinnedNormalObservation(cutpoints=cutpoints)
+
+
+def test_binned_normal_masses_shapes_masks_and_identity() -> None:
+    """Irregular bins integrate to one and affine coordinates keep their meaning."""
+    model = BinnedNormalObservation(
+        cutpoints=(-1.0, 0.2, 3.0), scale=0.7, offset=0.3, slope=2.0
+    )
+    latent = np.array([[-1.0], [0.0], [1.0]])
+    codes = np.arange(4)
+    masses = np.exp(model.log_prob(latent, codes))
+    expected = np.diff(
+        stats.norm.cdf(
+            [-np.inf, -1.0, 0.2, 3.0, np.inf], loc=0.3 + 2 * latent, scale=0.7
+        ),
+        axis=-1,
+    )
+    np.testing.assert_allclose(masses, expected, rtol=1e-9, atol=1e-16)
+    np.testing.assert_allclose(masses.sum(-1), 1.0)
+    invalid = np.array([-1.0, 0.5, 4.0, np.inf, np.nan])
+    assert np.isneginf(model.log_prob(np.array(0.0), invalid)).all()
+    np.testing.assert_array_equal(
+        model.log_prob(np.full(5, np.nan), invalid, mask=np.zeros(5, dtype=bool)), 0.0
+    )
+    with pytest.raises(TypeError, match="codes"):
+        model.log_prob(np.array(0.0), np.ones((), dtype=bool))
+    with pytest.raises(TypeError, match="latent"):
+        model.log_prob(np.array(0), codes)
+    with pytest.raises(ValueError, match="mask"):
+        model.log_prob(latent, codes, mask=np.array([True]))
+    with pytest.raises(ValueError, match="mask"):
+        model.log_prob(np.array(0.0), codes, mask=np.ones(4))
+    changes: list[dict[str, object]] = [
+        {"cutpoints": (-1.0, 0.2, 3.1)},
+        {"scale": 0.8},
+        {"offset": 0.4},
+        {"slope": 3.0},
+    ]
+    for changed in changes:
+        assert model.reference != model.model_copy(update=changed).reference
+    assert (
+        model.reference
+        == BinnedNormalObservation.model_validate_json(
+            model.model_dump_json()
+        ).reference
+    )
+
+
+@pytest.mark.parametrize(
+    "bounds", [(-41.0, -40.0), (40.0, 41.0), (12.0, 12.00001), (-0.00001, 0.00001)]
+)
+def test_binned_normal_extreme_and_narrow_interval_reference(
+    bounds: tuple[float, float],
+) -> None:
+    """Scaled quadrature avoids both CDF cancellation and reference underflow."""
+    left, right = bounds
+    midpoint = (left + right) / 2
+    reference_scale = stats.norm.logpdf(midpoint)
+    integral = integrate.quad(
+        lambda z: np.exp(stats.norm.logpdf(z) - reference_scale),
+        left,
+        right,
+        epsabs=1e-13,
+    )[0]
+    expected = reference_scale + np.log(integral)
+    model = BinnedNormalObservation(cutpoints=bounds)
+    actual = model.log_prob(np.array(0.0), np.array(1))
+    np.testing.assert_allclose(actual, expected, rtol=1e-10, atol=2e-10)
+
+
+def test_binned_normal_sampling_quantizes_same_draws_and_scores_frequencies() -> None:
+    """Independent Normal draws produce the predicted frequency in every bin."""
+    model = BinnedNormalObservation(cutpoints=(-0.5, 0.2, 1.0), scale=0.7)
+    location = np.array([0.0, 0.5])
+    key = RandomKey(seed=291, stream="quantized-sensor")
+    draws = model.sample(location, key, sample_shape=(30000,))
+    continuous = IIDObservation(family="normal", scale=0.7).sample(
+        location, key, sample_shape=(30000,)
+    )
+    np.testing.assert_array_equal(
+        draws, np.searchsorted(model.cutpoints, continuous, side="right")
+    )
+    assert draws.dtype == location.dtype
+    for code in range(4):
+        probability = np.exp(model.log_prob(location, np.array(code)))
+        np.testing.assert_allclose((draws == code).mean(0), probability, atol=0.01)
+    assert np.isfinite(model.log_prob(location, draws)).all()
+    # A one-cutpoint partition is valid and has only its two open tails.
+    binary = BinnedNormalObservation(cutpoints=(0.0,))
+    np.testing.assert_allclose(
+        np.exp(binary.log_prob(np.array(0.0), np.arange(2))), 0.5
+    )
+    assert binary.sample(np.array(0.0), key, sample_shape=(2, 3)).shape == (2, 3)
+    with pytest.raises(ValueError, match="shape"):
+        binary.sample(np.array(0.0), key, sample_shape=(-1,))
+    # At this precision these nondegenerate Normal draws all round to the edge.
+    at_edge = BinnedNormalObservation(cutpoints=(1.0,), scale=1e-30)
+    np.testing.assert_array_equal(
+        at_edge.sample(np.array(1.0), key, sample_shape=(8,)), 1.0
     )
