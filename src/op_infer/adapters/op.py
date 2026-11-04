@@ -219,7 +219,8 @@ def compiled_forward(  # noqa: C901, PLR0913, PLR0915 - static binding and one n
     The returned callable is reused with dynamic parameters/initial states.
 
     Args:
-        compiled: Natural-coordinate, operator/history/table-free compiled model.
+        compiled: Natural-coordinate model without operators, history, tables or
+            scheduled state maps.
         settings: Static fixed partition, output grid and explicit work bound.
         initial_state: Native flat state factory, given parameters/design inputs.
         parameter_names: Complete binding layout, including observable/initial inputs.
@@ -233,8 +234,8 @@ def compiled_forward(  # noqa: C901, PLR0913, PLR0915 - static binding and one n
 
     Raises:
         ValueError: Identity, layout, settings or declared work limits disagree.
-        NotImplementedError: Operators, history, tables or gauge-fixed execution
-            need a separately qualified adapter.
+        NotImplementedError: Operators, history, tables, scheduled state maps or
+            gauge-fixed execution need a separately qualified adapter.
     """
     identity, solver_module, model_module, observations, loops = _modules()
     del identity
@@ -244,6 +245,14 @@ def compiled_forward(  # noqa: C901, PLR0913, PLR0915 - static binding and one n
     if provenance.schema_version != 2 or provenance.structural_model != structural:
         msg = "Compiled forward structural model identity mismatch"
         raise ValueError(msg)
+    if (
+        getattr(compiled, "impulses", ())
+        or getattr(compiled, "impulse_times", ())
+        or compiled.meta.get("impulse_times")
+        or compiled.meta.get("op_system_impulses_ir")
+    ):
+        msg = "Compiled forward does not execute scheduled state maps (impulses)"
+        raise NotImplementedError(msg)
     if (
         compiled.operators
         or compiled.history_requirements
