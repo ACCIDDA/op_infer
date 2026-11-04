@@ -167,12 +167,19 @@ class BinnedNormalObservation(_Record):
             }[backend]
         )
         log_high = special.log_ndtr(high)
-        difference = special.log_ndtr(low) - log_high
+        # For intervals crossing the mean, a lower tail below -40 standard
+        # deviations has less mass than float64 can represent. Do not evaluate
+        # its native backward kernel: its undefined derivative can otherwise
+        # contaminate an exactly saturated interval through zero times infinity.
+        negligible_lower_tail = (low < -40) & (high >= 0)
+        safe_low = xp.where(negligible_lower_tail, xp.zeros_like(low), low)
+        difference = special.log_ndtr(safe_low) - log_high
         resolved = difference < 0
         safe_difference = xp.where(resolved, difference, -xp.ones_like(mean))
         density = xp.where(
             resolved, log_high + xp.log(-xp.expm1(safe_difference)), -xp.inf
         )
+        density = xp.where(negligible_lower_tail, log_high, density)
         left_mean = xp.where(code == 0, mean, xp.full_like(mean, self.cutpoints[0]))
         right_mean = xp.where(
             code == len(self.cutpoints),

@@ -51,6 +51,10 @@
 
 ### Fixed
 
+- Prevent an unrepresentable lower Normal tail from contaminating a central
+  bin's native gradient. Symmetric intervals and finite upper-boundary checks
+  cover JAX/Torch at very small noise scales.
+
 - Skip the empty first-interval scan after a single bootstrap step, allowing
   registered adapters with positive-length contracts while preserving the
   integration mesh and observation values.

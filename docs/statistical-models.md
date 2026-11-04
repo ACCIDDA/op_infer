@@ -106,6 +106,9 @@ limits receiving tail probability. Finite intervals use native log-CDF kernels
 and stable log differences, reflecting right-tail intervals to avoid subtracting
 probabilities rounded to one. Tests compare extreme and narrow intervals with
 independent scaled quadrature and latent gradients with truncated-Normal moments.
+For intervals crossing the mean, lower tails below -40 standard deviations have
+unrepresentable float64 mass and are excluded before native differentiation;
+this prevents an inactive tail from contaminating a saturated bin's gradient.
 NumPy, JAX and Torch CPU float32/64 values and sampling are qualified; float64
 gradient and JAX JIT/vmap checks cover the declared scope. This new law has not
 been separately qualified on CUDA. Precision must resolve cutpoints, their

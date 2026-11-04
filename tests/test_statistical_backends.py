@@ -275,9 +275,22 @@ def test_binned_normal_native_masses_sampling_and_invalid_codes(
         host(draws), host(model.sample(location, key, sample_shape=(20000,)))
     )
     assert draws.dtype == location.dtype
-    np.testing.assert_allclose(
-        [(host(draws) == i).mean() for i in range(4)], expected, atol=0.01
+    continuous = IIDObservation(family="normal", scale=0.8, offset=0.2).sample(
+        location, key, sample_shape=(20000,)
     )
+    np.testing.assert_array_equal(
+        host(draws),
+        np.searchsorted(
+            np.asarray(model.cutpoints, dtype=host(continuous).dtype),
+            host(continuous),
+            side="right",
+        ),
+    )
+    # Exact marginal binomial bounds bound the chance of a false failure in any
+    # of four bins by 4e-8, without relying on a backend-specific RNG sequence.
+    lower, upper = stats.binom.interval(1 - 1e-8, len(draws), expected)
+    counts = np.array([(host(draws) == i).sum() for i in range(4)])
+    assert np.all((counts >= lower) & (counts <= upper))
     assert np.isfinite(host(model.log_prob(location, draws))).all()
     if state_before is not None:
         assert native.equal(state_before, native.random.get_rng_state())
@@ -342,3 +355,33 @@ def test_binned_normal_jax_jit_vmap_sampling() -> None:
     draws = jax.jit(jax.vmap(lambda key: model.sample(xp.array(0.0), key)))(keys)
     assert len(np.unique(draws)) == 3
     assert np.isfinite(np.asarray(jax.jit(model.log_prob)(xp.array(0.0), draws))).all()
+
+
+@pytest.mark.parametrize("scale", [1e-10, 1e-100, 1e-200])
+@pytest.mark.parametrize("upper", [0.0, 1.0])
+def test_binned_normal_negligible_tail_cannot_poison_gradient(
+    native: Any,  # noqa: ANN401
+    scale: float,
+    upper: float,
+) -> None:
+    """An unrepresentable inactive tail has zero contribution to the score."""
+    model = BinnedNormalObservation(cutpoints=(-1.0, upper), scale=scale)
+    location = native.asarray(0.0, dtype=native.float64)
+    code = native.asarray(1)
+    if native.__name__.startswith("jax"):
+        import jax  # noqa: PLC0415
+
+        value, gradient = jax.jit(
+            jax.value_and_grad(lambda x: model.log_prob(x, code))
+        )(location)
+    else:
+        location.requires_grad_()
+        value = model.log_prob(location, code)
+        value.backward()
+        gradient = location.grad
+    expected_mass = -np.log(2.0) if upper == 0 else 0.0
+    expected_gradient = -np.sqrt(2 / np.pi) / scale if upper == 0 else 0.0
+    np.testing.assert_allclose(host(value), expected_mass, rtol=1e-12, atol=1e-12)
+    np.testing.assert_allclose(
+        host(gradient), expected_gradient, rtol=1e-12, atol=1e-12
+    )
