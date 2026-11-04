@@ -74,9 +74,9 @@ Normal observations optionally declare `lower_limit` and/or `upper_limit`.
 Sampling clips to those limits. Scoring a limit uses the corresponding tail
 probability, while interior values use density and values beyond a limit are
 impossible. This is a censored probability law, not a truncated/rejection-sampled
-Normal. Stable native log-CDF kernels retain tail derivatives. General interval
-censoring, AR(1) dependence and non-Normal censoring remain planned; unsupported
-censoring declarations fail rather than silently switching likelihood.
+Normal. Stable native log-CDF kernels retain tail derivatives. AR(1) dependence
+and non-Normal censoring remain planned; unsupported censoring declarations fail
+rather than silently switching likelihood.
 
 ```python
 from op_infer.observe import IIDObservation
@@ -87,6 +87,60 @@ measurements = sensor.sample(latent, RandomKey(seed=2026, stream="sensor"))
 terms = sensor.log_prob(latent, measurements, mask=np.array([True, True]))
 assert terms.shape == latent.shape
 ```
+
+### Quantized Normal measurements
+
+`BinnedNormalObservation` records which interval contains an underlying Normal
+measurement. Declare at least one finite, strictly increasing `cutpoints` tuple.
+For `K` cutpoints, the observation is a zero-based code in `0, ..., K`:
+`0` means `(-inf, c[0])`, an interior code `j` means `[c[j-1], c[j])`,
+and `K` means `[c[K-1], inf)`. An exact boundary draw belongs to the higher bin.
+Codes label intervals; they are neither physical measurements nor midpoints.
+The affine mean and standard deviation have the same meanings as in the
+continuous Normal law. Cutpoints use those measurement coordinates, so callers
+must explicitly transform an instrument's reporting scale when necessary.
+
+Sampling draws through the existing Normal implementation and records the bin.
+Scoring returns the Normal probability of that same interval, with open-ended
+limits receiving tail probability. Finite intervals use native log-CDF kernels
+and stable log differences, reflecting right-tail intervals to avoid subtracting
+probabilities rounded to one. Tests compare extreme and narrow intervals with
+independent scaled quadrature and latent gradients with truncated-Normal moments.
+NumPy, JAX and Torch CPU float32/64 values and sampling are qualified; float64
+gradient and JAX JIT/vmap checks cover the declared scope. This new law has not
+been separately qualified on CUDA. Precision must resolve cutpoints, their
+standardized separation and the log-CDF difference; very narrow intervals can
+lose relative accuracy, and differences that round to zero have zero computed
+probability. Use sufficient precision for the declared instrument partition.
+
+```python
+from op_infer.observe import BinnedNormalObservation
+
+quantized = BinnedNormalObservation(cutpoints=(-0.5, 0.25, 1.0), scale=0.2)
+codes = quantized.sample(latent, RandomKey(seed=2026, stream="quantized-sensor"))
+log_mass = quantized.log_prob(latent, codes)
+assert np.isfinite(log_mass).all()
+```
+
+Integer or real floating arrays may hold codes; samples retain the latent
+floating dtype. Fractional, negative, nonfinite or out-of-range codes score as
+impossible. Missing masks follow the existing native boolean convention and
+allow missing NaNs to contribute zero. The content reference records the entire
+partition, boundary convention, affine parameters and noise scale. A partition
+is fixed for the whole observation channel; distinct instruments can use distinct
+named channels. Arbitrary per-cell interval bounds, mixed exact and interval
+reports, correlated errors and a dedicated curvature API remain outside this
+interface. The implementation partially addresses
+[observation issue #6](https://github.com/ACCIDDA/op_infer/issues/6).
+
+Run the independent quantized-sensor frequency example with
+`uv run python examples/quantized_sensor.py`. This is the fixed-cutpoint Normal
+interval law also used by
+[PyMC OrderedProbit](https://www.pymc.io/projects/docs/en/stable/api/distributions/generated/pymc.OrderedProbit.html)
+and [Stan ordered probit](https://mc-stan.org/docs/functions-reference/bounded_discrete_distributions.html#ordered-probit-distribution),
+after adjusting for their respective scale and code conventions.
+Tail evaluation uses the native equivalent of
+[SciPy log_ndtr](https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.log_ndtr.html).
 
 NumPy uses SciPy laws, JAX uses NumPyro and native JAX keys, and Torch uses local
 CPU or device-matched CUDA generators. Gamma-Poisson/beta-binomial Torch draws use Torch's native Gamma

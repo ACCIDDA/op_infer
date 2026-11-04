@@ -12,6 +12,16 @@ import pytest
 from op_infer.rng import RandomKey
 
 
+def test_quantized_sensor_example() -> None:
+    """The public example compares the complete partition with independent mass."""
+    namespace = runpy.run_path(
+        str(Path(__file__).resolve().parents[1] / "examples/quantized_sensor.py")
+    )
+    report = namespace["run_example"]()
+    assert report["draws"] == 30000
+    assert len(report["expected_probability"]) == 4
+
+
 @pytest.mark.skipif(
     importlib.util.find_spec("trade_study") is None, reason="requires study extra"
 )

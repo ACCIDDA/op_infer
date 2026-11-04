@@ -4,6 +4,14 @@
 
 ### Added
 
+- Add fixed-partition `BinnedNormalObservation` for quantized measurements,
+  including finite intervals and both open tails. Sampling and interval-mass
+  scoring share the partition, affine parameters, masks and content identity;
+  native NumPy/JAX/Torch CPU checks cover independent probability references,
+  extreme/narrow intervals, latent gradients, addressed replay and JAX JIT/vmap.
+  Per-cell partitions, correlated errors and explicit curvature remain outside
+  this partial implementation of observation issue #6.
+
 - Add bounded single-device CUDA execution to the native masked-cohort NPE
   adapter. CUDA device identity is part of immutable settings and provenance;
   the implicit CPU default preserves existing artifact identities. CPU banks

@@ -6,10 +6,10 @@ from typing import Any
 
 import numpy as np
 import pytest
-from scipy import stats
+from scipy import integrate, stats
 
 from op_infer.adapters.rng import jax_key
-from op_infer.observe import IIDObservation
+from op_infer.observe import BinnedNormalObservation, IIDObservation
 from op_infer.priors import (
     Beta,
     Gamma,
@@ -247,3 +247,98 @@ def test_native_prior_draws_match_independent_moments(native: Any, law: Any) -> 
     mean, variance = law.scipy().stats(moments="mv")
     assert abs(host(values).mean() - mean) < 7 * np.sqrt(variance / 12000)
     assert abs(host(values).var() - variance) < 0.12 * variance
+
+
+@pytest.mark.parametrize("dtype", ["float32", "float64"])
+def test_binned_normal_native_masses_sampling_and_invalid_codes(
+    native: Any,  # noqa: ANN401
+    dtype: str,
+) -> None:
+    """Both native laws score the same partition that their samplers record."""
+    model = BinnedNormalObservation(cutpoints=(-1.0, 0.3, 1.2), scale=0.8, offset=0.2)
+    location = native.asarray(0.3, dtype=getattr(native, dtype))
+    codes = native.asarray([0, 1, 2, 3], dtype=native.int64)
+    expected = np.diff(stats.norm.cdf([-np.inf, -1.0, 0.3, 1.2, np.inf], 0.5, 0.8))
+    np.testing.assert_allclose(
+        np.exp(host(model.log_prob(location, codes))), expected, rtol=2e-6
+    )
+    invalid = native.asarray([-1, 0.5, 4, np.inf, np.nan], dtype=getattr(native, dtype))
+    assert np.isneginf(host(model.log_prob(location, invalid))).all()
+    key = RandomKey(seed=73, stream="quantized-sensor")
+    state_before = (
+        None
+        if native.__name__.startswith("jax")
+        else native.random.get_rng_state().clone()
+    )
+    draws = model.sample(location, key, sample_shape=(20000,))
+    np.testing.assert_array_equal(
+        host(draws), host(model.sample(location, key, sample_shape=(20000,)))
+    )
+    assert draws.dtype == location.dtype
+    np.testing.assert_allclose(
+        [(host(draws) == i).mean() for i in range(4)], expected, atol=0.01
+    )
+    assert np.isfinite(host(model.log_prob(location, draws))).all()
+    if state_before is not None:
+        assert native.equal(state_before, native.random.get_rng_state())
+
+
+@pytest.mark.parametrize(
+    "cutpoints", [(-1.0, 1.0), (-41.0, -40.0), (40.0, 41.0), (12.0, 12.00001)]
+)
+def test_binned_normal_native_gradients_and_masked_cells(
+    native: Any,  # noqa: ANN401
+    cutpoints: tuple[float, ...],
+) -> None:
+    """Tail and interval score derivatives match independent truncated moments."""
+    model = BinnedNormalObservation(cutpoints=cutpoints, scale=1.0)
+    location = native.asarray([0.0, 0.0, 0.0, np.nan], dtype=native.float64)
+    codes = native.asarray([0.0, 1.0, 2.0, np.nan], dtype=native.float64)
+    mask = native.asarray([True, True, True, False])
+    if native.__name__.startswith("jax"):
+        import jax  # noqa: PLC0415
+
+        value, gradient = jax.jit(
+            jax.value_and_grad(lambda x: model.log_prob(x, codes, mask=mask).sum())
+        )(location)
+    else:
+        location.requires_grad_()
+        value = model.log_prob(location, codes, mask=mask).sum()
+        value.backward()
+        gradient = location.grad
+    np.testing.assert_allclose(
+        host(value), model.log_prob(np.zeros(3), np.arange(3)).sum(), rtol=1e-10
+    )
+    left, right = cutpoints
+    reference_scale = stats.norm.logpdf((left + right) / 2)
+    mass = integrate.quad(
+        lambda z: np.exp(stats.norm.logpdf(z) - reference_scale),
+        left,
+        right,
+        epsabs=1e-13,
+    )[0]
+    first_moment = integrate.quad(
+        lambda z: z * np.exp(stats.norm.logpdf(z) - reference_scale),
+        left,
+        right,
+        epsabs=1e-13,
+    )[0]
+    expected = [
+        stats.truncnorm.mean(-np.inf, left),
+        first_moment / mass,
+        stats.truncnorm.mean(right, np.inf),
+        0.0,
+    ]
+    np.testing.assert_allclose(host(gradient), expected, rtol=2e-8, atol=2e-8)
+
+
+def test_binned_normal_jax_jit_vmap_sampling() -> None:
+    """Dynamic keys change quantized measurements in a reused JAX graph."""
+    jax = pytest.importorskip("jax")
+    xp = pytest.importorskip("jax.numpy")
+    pytest.importorskip("numpyro")
+    model = BinnedNormalObservation(cutpoints=(-0.5, 0.5))
+    keys = jax.random.split(jax_key(RandomKey(seed=73, stream="bins")), 32)
+    draws = jax.jit(jax.vmap(lambda key: model.sample(xp.array(0.0), key)))(keys)
+    assert len(np.unique(draws)) == 3
+    assert np.isfinite(np.asarray(jax.jit(model.log_prob)(xp.array(0.0), draws))).all()
