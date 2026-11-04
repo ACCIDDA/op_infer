@@ -409,7 +409,7 @@ def test_empty_scheduled_metadata_retains_continuous_solution() -> None:
         ForwardDesign(expected.design, None),
         RandomKey(seed=1, stream="simulation"),
     )
-    np.testing.assert_array_equal(values["value"], [2.0, 2.0, 2.0])
+    np.testing.assert_array_equal(host(values["value"]), [2.0, 2.0, 2.0])
 
 
 def test_shaped_reduction_retains_only_declared_outputs() -> None:
