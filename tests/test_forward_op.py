@@ -384,6 +384,34 @@ def test_unqualified_operator_composition_is_rejected() -> None:
         adapter(compiled, settings, expected, np)
 
 
+@pytest.mark.parametrize("time", [-1.0, 0.0, 0.5, 1.0, 2.0])
+@pytest.mark.parametrize("key", ["impulse_times", "op_system_impulses_ir"])
+def test_unqualified_scheduled_maps_are_rejected(time: float, key: str) -> None:
+    """Published event metadata cannot silently become a continuous-only solve."""
+    compiled, settings, expected = fixture()
+    # Retain a real compiled artifact while exercising the metadata contract on
+    # both the released compiler floor and newer event-aware compiler builds.
+    compiled = replace(compiled, meta={**compiled.meta, key: (time,)})
+    with pytest.raises(NotImplementedError, match="scheduled state maps"):
+        adapter(compiled, settings, expected, np)
+
+
+def test_empty_scheduled_metadata_retains_continuous_solution() -> None:
+    """An empty declaration is the existing no-event numerical problem."""
+    compiled, settings, expected = fixture()
+    compiled = replace(
+        compiled,
+        meta={**compiled.meta, "impulse_times": (), "op_system_impulses_ir": ()},
+    )
+    forward = adapter(compiled, settings, expected, np)
+    values = forward(
+        {"rate": np.asarray(0.0), "scale": np.asarray(1.0), "initial": np.asarray(2.0)},
+        ForwardDesign(expected.design, None),
+        RandomKey(seed=1, stream="simulation"),
+    )
+    np.testing.assert_array_equal(host(values["value"]), [2.0, 2.0, 2.0])
+
+
 def test_shaped_reduction_retains_only_declared_outputs() -> None:
     """A many-state model returns a scalar observed sum at each requested time."""
     spec = {

@@ -21,8 +21,11 @@ or order fail explicitly. Native values and graphs are not copied to host.
 factory and selected compiled observables to OP Engine's public functional
 `fixed_explicit_step` kernels and namespace loop adapters. No numerical method is
 reimplemented. The first supported subset is deterministic fixed Euler, Heun,
-RK4 and DOPRI5 in natural coordinates, without operators, history, input tables or
-gauge fixing. Those compositions fail explicitly; live adaptive, stochastic,
+RK4 and DOPRI5 in natural coordinates, without operators, history, input tables,
+scheduled state maps (impulses) or gauge fixing. Those compositions fail explicitly;
+declared maps are rejected even when their times fall outside the output window.
+The engine's separate impulse-aware solver/provider path does not add event
+execution to this adapter. Live adaptive, stochastic,
 steady-state and provider adapters need separate qualification.
 
 `FixedForwardSettings` declares static observation times (including the initial
