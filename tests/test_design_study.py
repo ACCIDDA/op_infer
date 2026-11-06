@@ -252,7 +252,7 @@ def test_confusion_matches_summarize_and_rows_sum_to_the_planned_count(
 
 def _width(table: DesignConfusion) -> float:
     cell = table.intervals[0][0]
-    return cell.high - cell.low
+    return float(cell.high - cell.low)
 
 
 def test_confusion_bonferroni_level_and_refusals(tmp_path: Path) -> None:
