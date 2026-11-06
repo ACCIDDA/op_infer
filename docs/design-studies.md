@@ -66,7 +66,8 @@ cell. It reads the same records and applies the same provenance validation as
 `summarize`; missing records are failed trials, so each row sums to the planned
 count. When several alternatives beat the generator in one cohort, the verdict names
 the alternative with the most negative standardised paired difference
-(`mean_delta / se_delta`, declared model order breaking ties). The intervals are
+(`mean_delta / se_delta`, taken as minus infinity when the standard error is zero;
+declared model order breaking ties). The intervals are
 marginal; `adjustment="bonferroni"` holds the intervals of one row over its columns
 simultaneously at approximately the nominal level (Wilson coverage is approximate),
 and rows are separate statements. The table does not certify gate power.

@@ -245,14 +245,14 @@ def test_confusion_matches_summarize_and_rows_sum_to_the_planned_count(
             for cfg, m in zip(table.configs, table.metadata, strict=True)
             if cfg["design"] == design
         ]
-        diagonal = [result.intervals[i][i]["estimate"] for i in range(2)]
+        diagonal = [result.intervals[i][i].estimate for i in range(2)]
         assert diagonal == pytest.approx(generator_fraction)
-        assert all(result.intervals[i][3]["k"] == 4 for i in range(2))
+        assert all(result.intervals[i][3].k == 4 for i in range(2))
 
 
 def _width(table: DesignConfusion) -> float:
     cell = table.intervals[0][0]
-    return float(cell["high"]) - float(cell["low"])
+    return cell.high - cell.low
 
 
 def test_confusion_bonferroni_level_and_refusals(tmp_path: Path) -> None:
@@ -322,3 +322,75 @@ def test_alternative_verdict_names_the_strongest_alternative() -> None:
         _verdict({"outcome": "alternative", "contrasts": {}}, "a", models)
     with pytest.raises(ValueError, match="mismatch"):
         _verdict({"outcome": "bogus"}, "a", models)
+
+
+def _rewrite(path: Path, **changes: object) -> None:
+    record = json.loads(path.read_text())
+    record.update(changes)
+    path.write_text(json.dumps(record))
+
+
+def test_alternative_and_indistinguishable_verdicts_reach_their_columns(
+    tmp_path: Path,
+) -> None:
+    """Stored records with those outcomes are tabulated by confusion and summarize."""
+    study = _study()
+    ids = list(range(6))
+    study.run(tmp_path, replicate_ids=ids, seed=8)
+    won = {"positive": {"outcome": "alternative", "mean_delta": -5.0, "se_delta": 1.0}}
+    for index in (0, 1):
+        _rewrite(
+            tmp_path / f"design_small_negative_{index:020d}.json",
+            outcome="alternative",
+            contrasts=won,
+        )
+    _rewrite(
+        tmp_path / f"design_small_negative_{2:020d}.json", outcome="indistinguishable"
+    )
+    row = study.confusion(tmp_path, replicate_ids=ids, seed=8, confidence=0.9)["small"]
+    assert row.counts[0] == (3, 2, 1, 0)
+    assert row.confidence == pytest.approx(0.9)
+    fractions = study.summarize(tmp_path, replicate_ids=ids, seed=8).scores[0]
+    np.testing.assert_allclose(fractions[:4], [3 / 6, 2 / 6, 1 / 6, 0.0])
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"schema_version": 2},
+        {"outcome": "bogus"},
+        {
+            "outcome": "alternative",
+            "contrasts": {
+                "unknown": {
+                    "outcome": "alternative",
+                    "mean_delta": -1.0,
+                    "se_delta": 1.0,
+                }
+            },
+        },
+        {
+            "outcome": "alternative",
+            "contrasts": {
+                "positive": {
+                    "outcome": "alternative",
+                    "mean_delta": None,
+                    "se_delta": 1.0,
+                }
+            },
+        },
+    ],
+)
+def test_malformed_stored_records_are_refused_by_summarize_and_confusion(
+    tmp_path: Path, change: dict[str, object]
+) -> None:
+    """A tampered schema, outcome or contrast raises instead of being counted."""
+    study = _study()
+    ids = list(range(3))
+    study.run(tmp_path, replicate_ids=ids, seed=8)
+    _rewrite(next(tmp_path.glob("design_small_negative_*.json")), **change)
+    with pytest.raises(ValueError, match=r"mismatch|alternative contrast"):
+        study.confusion(tmp_path, replicate_ids=ids, seed=8)
+    if "contrasts" not in change:
+        with pytest.raises(ValueError, match="mismatch"):
+            study.summarize(tmp_path, replicate_ids=ids, seed=8)
