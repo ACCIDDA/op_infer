@@ -4,6 +4,13 @@
 
 ### Added
 
+- Add `DesignStudy.confusion` and `DesignConfusion`: the generator-by-verdict
+  table of a replicated design study (favour each model, indistinguishable,
+  failed) with fixed-sample Wilson intervals, an optional Bonferroni level over a
+  row's columns, and the same stored records, provenance validation and
+  failed-trial accounting as `summarize`. An alternative verdict names the
+  alternative with the most negative standardised paired difference (#68).
+
 - Add fixed-partition `BinnedNormalObservation` for quantized measurements,
   including finite intervals and both open tails. Sampling and interval-mass
   scoring share the partition, affine parameters, masks and content identity;

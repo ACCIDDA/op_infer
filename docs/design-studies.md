@@ -58,6 +58,20 @@ cohort is one replicate. Bootstrap resamples are not extra independent cohorts.
 Intervals are marginal; the joint rule does not certify multiplicity control or
 gate power. Per-alternative results remain in the underlying records.
 
+`study.confusion(directory, replicate_ids=planned_ids, seed=...)` tabulates, for each
+design, the verdict of every planned cohort by generating model: one row per
+generator and one column per verdict (`favor:<model>` for each model,
+`indistinguishable`, `failed`), with counts and fixed-sample Wilson intervals per
+cell. It reads the same records and applies the same provenance validation as
+`summarize`; missing records are failed trials, so each row sums to the planned
+count. When several alternatives beat the generator in one cohort, the verdict names
+the alternative with the most negative standardised paired difference
+(`mean_delta / se_delta`, taken as minus infinity when the standard error is zero;
+declared model order breaking ties). The intervals are
+marginal; `adjustment="bonferroni"` holds the intervals of one row over its columns
+simultaneously at approximately the nominal level (Wilson coverage is approximate),
+and rows are separate statements. The table does not certify gate power.
+
 Qualify the full pipeline on the intended model/design range before interpreting
 recovery. The tests exercise exact normal-normal refits and SciPy predictive
 scores, three-way outcomes, aligned units, nonfinite failures, powered-bank

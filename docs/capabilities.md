@@ -27,7 +27,7 @@ trade-study. No sampler, scoring-rule library or executor is reimplemented here.
 | Rank calibration | `calibrate.pit`, `aggregate`, `gate`, rank artifacts | [Calibration](calibration.md): atom-aware ranks, multiplicity, power floors, failure accounting and contraction. |
 | Fixed-bank SBC execution | `sbc.run_sbc`, `SBCEstimand`, `SBCFit` | `study` extra; [runner](sbc-runner.md), stable IDs, guarded resume and retained failures. |
 | Masked-unit SBC | `masked_sbc.MaskedSBCPlan`, `run_masked_sbc`, `summarize_masked_sbc` | `study` extra; [masked banks](masked-sbc.md), complete planned IDs, strata and independent-baseline width comparisons. No automatic informativeness verdict. |
-| Held-out pipeline recovery | `design.DesignStudy` and `compare.paired_predictive_contrast` | `study` extra; [design studies](design-studies.md), real refits, aligned units, supplied gate evidence and fixed independent cohorts. |
+| Held-out pipeline recovery and confusion table | `design.DesignStudy` (`summarize`, `confusion`) and `compare.paired_predictive_contrast` | `study` extra; [design studies](design-studies.md), real refits, aligned units, supplied gate evidence and fixed independent cohorts. |
 | Numerical likelihood/gradient checks | Provenance records and optional synthetic reference tests | [Numerical provenance](design/numerical-provenance.md); limited to declared references/backends and tolerances. |
 | flepimop2 workflows | Separate GPL `flepimop2-op_infer` process provider | Executes calibration/SBC/design plans; the MIT core never imports flepimop2. |
 
