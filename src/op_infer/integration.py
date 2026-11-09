@@ -173,8 +173,9 @@ def integrate_unit_importance(  # noqa: PLR0913 - explicit target/attempt identi
 
     Caller owns the target measure, bounds, latent prior and Jacobian inclusion,
     normalized proposal laws, tail/support qualification and RNG state. No mode
-    search, Laplace construction or adequacy gate occurs here. Callback failures
-    retain a failed attempt, with no invented estimate or dropped weights.
+    search, Laplace construction or adequacy gate occurs here. Expected numerical
+    callback failures retain a failed attempt, with no invented estimate or dropped
+    weights. Unexpected exceptions propagate to the caller's attempt ledger.
 
     Returns:
         Attempt record including raw weight counts and Kish ESS.
@@ -304,7 +305,7 @@ def integrate_unit_importance(  # noqa: PLR0913 - explicit target/attempt identi
             0,
             None,
         )
-    except Exception as error:  # noqa: BLE001 - retain arbitrary callback failure with stage and reason
+    except (ValueError, TypeError, ArithmeticError, RuntimeError) as error:
         return result(
             "failed",
             completed,

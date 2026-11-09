@@ -246,3 +246,15 @@ def test_malformed_callback_shape_is_explicit_failed_attempt() -> None:
     assert result.completed_draw_count == result.draw_count
     assert result.draw_digest is not None
     assert "one value per draw" in (result.reason or "")
+
+
+def test_unexpected_callback_error_propagates_to_execution_ledger() -> None:
+    """Programming faults are not obscured by an unrestricted callback catch."""
+    normal = _normal_proposal("normal", 0.0, 1.0)
+
+    def target(_points: np.ndarray) -> np.ndarray:
+        msg = "missing programmer-owned state"
+        raise KeyError(msg)
+
+    with pytest.raises(KeyError, match="programmer-owned"):
+        _integrate(target, (normal,))

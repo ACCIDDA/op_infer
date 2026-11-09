@@ -78,6 +78,9 @@ from the mixture and weighted by the density of the **whole mixture**. The resul
 and completed draws, component weights and mode labels, target/proposal/draw identities, a digest
 of the generated float64 points, finite/zero/invalid weight counts, raw Kish ESS and a readable,
 unreadable or failed attempt outcome. Invalid weights are never discarded.
+Expected numerical callback exceptions (`ValueError`, `TypeError`, `ArithmeticError`,
+`RuntimeError`) retain failed attempts with stage and reason. Unexpected exceptions propagate;
+the enclosing execution ledger must retain those planned attempts rather than dropping them.
 
 This is a numerical primitive, not an adequacy policy: `estimated` does not mean reliable, and no
 tail-fit, Pareto `k̂`, MC error threshold, automatic recovery, or exactness verdict is implemented.
