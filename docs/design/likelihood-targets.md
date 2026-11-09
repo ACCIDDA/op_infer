@@ -67,6 +67,33 @@ evidence for an approximation, not an exact correction. An exact claim requires 
 or a proof that the integrand vanishes outside the box. Pilot adaptation must preserve the stated
 estimator law and proposal support, including any pilot randomness used by the joint construction.
 
+### Implemented bounded increment
+
+`op_infer.integration.integrate_unit_importance` implements raw defensive-mixture importance
+integration for one unit at one parameter point. The caller supplies the vectorized log integrand,
+normalized proposal samplers and their actual vectorized log densities, strictly positive mixture
+weights, a named defensive component, an explicit `numpy.random.Generator`, and nonempty unit,
+parameter, attempt, draw-set, target and proposal identities. Each point is sampled independently
+from the mixture and weighted by the density of the **whole mixture**. The result retains planned
+and completed draws, component weights and mode labels, target/proposal/draw identities, a digest
+of the generated float64 points, finite/zero/invalid weight counts, raw Kish ESS and a readable,
+unreadable or failed attempt outcome. Invalid weights are never discarded.
+
+This is a numerical primitive, not an adequacy policy: `estimated` does not mean reliable, and no
+tail-fit, Pareto `k̂`, MC error threshold, automatic recovery, or exactness verdict is implemented.
+The component called defensive is caller-declared; its support and tails are not verified. Mode
+search and proposal construction are also caller-owned and are recorded only as supplied metadata.
+No Laplace proposal is implemented or qualified. Persist the actual generated points and canonical
+settings needed for replay; the draw digest and identity alone cannot reconstruct them.
+
+The caller also owns the target measure, latent-prior inclusion, coordinate transforms and
+Jacobians, integration bounds/truncation, normalization, proposal support proof, and proposal
+identity. The supplied log integrand must state whether it includes the latent prior and Jacobian;
+do not add either implicitly. See the [numerical provenance contract](numerical-provenance.md) for
+linking per-unit settings and outcomes to the `unit_integration` error component. This increment
+does not implement joint-unit likelihood accumulation, mode search, deterministic quadrature,
+fitting/sampling, exact pseudo-marginal inference or a solved-multimodality claim.
+
 ## Importance estimates: evidence and outcomes
 
 A per-unit integration implementation must retain a record per unit, parameter evaluation and attempt. Store the method and proposal

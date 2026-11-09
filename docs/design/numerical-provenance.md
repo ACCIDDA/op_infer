@@ -8,6 +8,14 @@ adaptive/spatial inference remain planned. A bounded [fixed compiled forward ada
 now consumes these records. Current fitting adapters reuse
 these same references.
 
+The bounded per-unit raw defensive importance primitive in
+[`op_infer.integration`](likelihood-targets.md#implemented-bounded-increment) returns an
+attempt-level record with target, proposal, unit, parameter, attempt and draw identities; sampled
+draw digest; counts; estimate; ESS; and failure/readability outcome. Link canonical target,
+proposal, draw-generation and bounds/settings artifacts into the existing `unit_integration`
+`ErrorComponent`. The primitive's self-reported identities do not authenticate artifact bytes,
+establish proposal support, turn `estimated` into an adequacy verdict, or qualify exactness.
+
 ## The implemented records
 
 Import the metadata API from `op_infer.posterior`; `op_infer.forward.ForwardRunReference` associates

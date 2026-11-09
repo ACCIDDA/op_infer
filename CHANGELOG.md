@@ -4,6 +4,12 @@
 
 ### Added
 
+- Add caller-owned per-unit defensive-mixture importance integration with actual
+  mixture densities, explicit target/draw/attempt identities, raw weight counts
+  and ESS, and retained failed/unreadable attempts. Qualify independent Gaussian,
+  multimodal and support/failure references. No Laplace proposal, automatic
+  adequacy gate or exact inference claim is supplied (partial #18).
+
 - Add `DesignStudy.confusion` and `DesignConfusion`: the generator-by-verdict
   table of a replicated design study (favour each model, indistinguishable,
   failed) with fixed-sample Wilson intervals, an optional Bonferroni level over a

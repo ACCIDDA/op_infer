@@ -7,8 +7,10 @@ immutable output references. The optional ArviZ adapter implements guarded DataT
 its optional adapters lower to native JAX keys and validated Torch CPU generator banks.
 `priors`, `observe` and `simulation` implement the bounded catalog of independent
 scalar or fixed-shaped iid priors and iid observation laws described in the
-statistical-model guide. General transforms, hierarchy, dependence and integrated
-likelihood interfaces remain planned. The optional NumPyro adapter implements a
+statistical-model guide. `integration` implements a caller-owned raw per-unit
+defensive-mixture importance primitive with retained attempt diagnostics; proposal
+construction, tail qualification and integrated fitting remain planned.
+General transforms, hierarchy and dependence remain planned. The optional NumPyro adapter implements a
 bounded native NUTS fit with shared posterior
 records and raw diagnostic outcomes. `calibrate` implements rank-based SBC aggregation (ordinary and
 randomized-rank PIT, Benjamini-Hochberg multiplicity, power floors, failed-replicate accounting and
@@ -29,6 +31,8 @@ See [implemented capabilities](capabilities.md) for the current scope and extras
 ::: op_infer.adapters.op
 
 ::: op_infer.likelihood
+
+::: op_infer.integration
 
 ::: op_infer.estimators
 
