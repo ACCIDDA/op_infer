@@ -11,14 +11,23 @@ Magnusson, Matamoros and Vehtari 2025, Bayesian Analysis, on the uncertainty of
 elpd differences).
 
 The sampler takes diagnostics only; it has no argument through which a score
-could enter. Thresholds of the stability rule are the caller's reading-rule
-choices and have no defaults.
+could enter (enforced by its signature). Thresholds of the stability rule are the
+caller's reading-rule choices and have no defaults.
+
+The estimates assume finite-variance, independent per-unit Monte Carlo errors
+and independent random keys in the two scorings. Correlated errors, shared keys
+(the noise cancels in the difference) and heavy-tailed importance-sampling errors
+(Pareto shape above 0.5, where sample variances are unstable and usually too
+small) can make ``mc_sd`` understate the noise. A stable label means the total is
+reproducible against an independent rerun, not that it is accurate: a bias that
+both scorings share is invisible to the audit.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from numbers import Integral
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
@@ -79,7 +88,7 @@ def audit_sample(
     diagnostic: ArrayLike,
     *,
     edges: Sequence[float],
-    per_stratum: int,
+    per_stratum: int | np.integer[Any],
     seed: int,
 ) -> AuditSample:
     """Draw a stratified sample of units from a tail diagnostic only.
@@ -98,13 +107,17 @@ def audit_sample(
         >>> s.taken, len(s.units) == len(set(s.units))
         ((5, 5, 5), True)
     """
-    if isinstance(per_stratum, bool) or not isinstance(per_stratum, int):
+    if isinstance(per_stratum, bool) or not isinstance(per_stratum, Integral):
         msg = "per_stratum must be a positive integer"
         raise ValueError(msg)  # noqa: TRY004 - value contract
-    values = np.asarray(diagnostic, dtype=float)
-    if per_stratum < 1 or values.size == 0:
-        msg = "per_stratum must be positive and the diagnostic nonempty"
+    if per_stratum < 1:
+        msg = "per_stratum must be a positive integer"
         raise ValueError(msg)
+    values = np.asarray(diagnostic, dtype=float)
+    if values.ndim != 1 or values.size == 0:
+        msg = "the diagnostic must be a nonempty one-dimensional array"
+        raise ValueError(msg)
+    per_stratum = int(per_stratum)
     labels = stratify(values, edges)
     rng = np.random.default_rng(seed)
     units: list[int] = []
@@ -136,7 +149,9 @@ class StabilityEstimate:
     ``mc_sd`` is the conservative standard deviation of the Monte Carlo noise of
     the total over all units; ``shift`` is the estimated difference between the
     audit total and the original total, with its sampling standard error
-    ``shift_se`` (finite population correction included).
+    ``shift_se`` (finite population correction included). If a nonempty stratum
+    has fewer than two usable audited units its noise cannot be estimated:
+    ``insufficient`` is true and ``mc_sd`` and ``shift_se`` are NaN.
     """
 
     shift: float
@@ -144,6 +159,23 @@ class StabilityEstimate:
     mc_sd: float
     n_failed: int
     n_sampled: int
+    insufficient: bool = False
+
+
+def _check_sample(sample: AuditSample) -> None:
+    k = len(sample.sizes)
+    strata = np.asarray(sample.strata, dtype=int)
+    counts = np.bincount(strata, minlength=k) if strata.size else np.zeros(k, int)
+    if (
+        len(sample.taken) != k
+        or strata.size != len(sample.units)
+        or (strata.size and (strata.min() < 0 or strata.max() >= k))
+        or tuple(int(c) for c in counts) != tuple(sample.taken)
+        or any(t > n for t, n in zip(sample.taken, sample.sizes, strict=True))
+        or len(set(sample.units)) != len(sample.units)
+    ):
+        msg = "inconsistent AuditSample (strata, taken, sizes or duplicate units)"
+        raise ValueError(msg)
 
 
 def stability_estimate(
@@ -158,19 +190,22 @@ def stability_estimate(
 
     - ``shift = sum_s N_s ebar_s``, the estimated difference of the totals (audit
       minus original), with ``shift_se = sqrt(sum_s N_s^2 (1 - n_s/N_s) v_s /
-      n_s)`` the sampling error of that extrapolation from a sample;
+      n_s)`` the sampling error of that extrapolation from a sample (zero for a
+      census stratum);
     - ``mc_sd = sqrt(sum_s N_s v_s)``, the noise of a total over all ``N_s``
       units if the per-unit errors are independent with variance ``v_s``.
       ``var(e)`` holds the noise of **both** runs and any between-unit spread of
-      the shift, so this overstates the noise of the original run (conservative).
+      the shift, so under independent errors and keys this overstates the noise
+      of the original run.
 
     A sampled unit with a non-finite value in either run is counted in
-    ``n_failed`` and left out of the moments; ``stability_label`` treats any
-    failure as unassessable.
+    ``n_failed`` and left out of the moments; the shift assumes failures are
+    missing at random within a stratum, and ``stability_label`` treats any
+    failure as unassessable. A nonempty stratum with fewer than two usable
+    audited units makes the estimate ``insufficient`` instead of raising.
 
     Raises:
-        ValueError: Lengths do not match the sample, or a nonempty stratum has
-            fewer than two usable audited units.
+        ValueError: Lengths do not match the sample, or the sample is inconsistent.
 
     Examples:
         >>> s = AuditSample((0, 1, 2, 3), (0, 0, 1, 1), (10, 10), (2, 2), 0, (0.5,))
@@ -178,6 +213,7 @@ def stability_estimate(
         >>> est.shift, round(est.mc_sd, 3), round(est.shift_se, 3), est.n_failed
         (40.0, 6.325, 12.649, 0)
     """
+    _check_sample(sample)
     a = np.asarray(original, dtype=float)
     b = np.asarray(audit, dtype=float)
     if a.shape != b.shape or a.shape != (len(sample.units),):
@@ -189,23 +225,28 @@ def stability_estimate(
     shift = 0.0
     var_shift = 0.0
     var_noise = 0.0
+    insufficient = False
     for k, size in enumerate(sample.sizes):
         x = e[usable & (strata == k)]
         if size == 0:
             continue
         if x.size < 2:  # a variance needs two values
-            msg = f"stratum {k} has fewer than two usable audited units"
-            raise ValueError(msg)
+            insufficient = True
+            continue
         v = float(x.var(ddof=1))
         shift += size * float(x.mean())
         var_shift += size**2 * (1.0 - x.size / size) * v / x.size
         var_noise += size * v
+    n_failed, n_sampled = int(np.sum(~usable)), int(e.size)
+    if insufficient:
+        nan = float("nan")
+        return StabilityEstimate(nan, nan, nan, n_failed, n_sampled, insufficient=True)
     return StabilityEstimate(
         shift,
         float(np.sqrt(max(var_shift, 0.0))),
         float(np.sqrt(var_noise)),
-        int(np.sum(~usable)),
-        int(e.size),
+        n_failed,
+        n_sampled,
     )
 
 
@@ -219,12 +260,15 @@ def stability_label(
 ) -> dict[str, object]:
     """Label a contrast ``stable`` or ``not_assessable`` (never ``tied``).
 
-    Stable requires all of: no failed audited unit; ``mc_sd <= max_mc_ratio * se``
-    with ``se`` the standard error of the original total; and the shift small
-    **including its sampling uncertainty**, ``|shift| + z * shift_se <=
-    max_shift_ratio * se`` (one-sided, ``z`` = 1.645). An audit too small to
-    bound the shift is therefore not assessable. The ratios are the caller's
-    reading-rule choices, fixed before the audit is read, and have no defaults.
+    Stable requires all of: no failed audited unit and no ``insufficient``
+    stratum; ``mc_sd <= max_mc_ratio * se`` with ``se`` the standard error of the
+    original total; and the shift small **including its sampling uncertainty**,
+    ``|shift| + z * shift_se <= max_shift_ratio * se`` (one-sided, ``z`` =
+    1.645). An audit too small to bound the shift is therefore not assessable. The
+    ratios are the caller's
+    reading-rule choices, fixed before the audit is read, and have no defaults;
+    only ``z`` has a default. Stable means reproducible against an independent
+    rerun, not accurate.
 
     Raises:
         ValueError: ``se``, a ratio or ``z`` is not a positive finite number.
@@ -248,7 +292,8 @@ def stability_label(
     mc_ratio = estimate.mc_sd / se
     shift_bound = (abs(estimate.shift) + z * estimate.shift_se) / se
     stable = (
-        estimate.n_failed == 0
+        not estimate.insufficient
+        and estimate.n_failed == 0
         and mc_ratio <= max_mc_ratio
         and shift_bound <= max_shift_ratio
     )
@@ -261,4 +306,5 @@ def stability_label(
         "shift_bound_ratio": float(shift_bound),
         "n_failed": estimate.n_failed,
         "n_sampled": estimate.n_sampled,
+        "insufficient": estimate.insufficient,
     }

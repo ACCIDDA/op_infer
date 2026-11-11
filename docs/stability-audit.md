@@ -11,7 +11,7 @@ total before it is read, on a sample of units (Vehtari, Gelman and Gabry 2017,
    `audit.audit_sample(diagnostic, edges=..., per_stratum=..., seed=...)` takes a
    per-unit diagnostic (for example the largest Pareto shape over the models) and
    draws a stratified sample. It has no argument through which a score could
-   enter, so the sample cannot depend on the scores. A non-finite diagnostic goes
+   enter (enforced by its signature), so the sample cannot depend on the scores. A non-finite diagnostic goes
    to the top stratum, never out of the frame.
 2. **Re-score the sample** with independent random keys and larger Monte Carlo
    settings, using your own scorer.
@@ -29,7 +29,14 @@ total before it is read, on a sample of units (Vehtari, Gelman and Gabry 2017,
    assessable. The ratios have no defaults: they are reading-rule choices to fix
    before the audit is read.
 
-A sampled unit with a non-finite value in either scoring is counted in
+A nonempty stratum with fewer than two usable audited units makes the estimate
+`insufficient` (NaN errors) and the label `not_assessable`. A sampled unit with a non-finite value in either scoring is counted in
 `n_failed` and left out of the moments; any failure makes the contrast not
-assessable. The package does not score units; delegate that to your estimator and
-to the [unit-level comparison](capabilities.md) tools as they arrive.
+assessable. The estimates assume finite-variance, independent per-unit Monte Carlo errors
+and independent random keys in the two scorings; correlated errors, shared keys
+and heavy-tailed importance-sampling errors (Pareto shape above 0.5) can make
+`mc_sd` understate the noise. A stable label means the total is reproducible
+against an independent rerun, not that it is accurate. `z` (default 1.645) is the
+only default of the rule. The package does not score units; use your estimator
+and, for paired contrasts, `compare.paired_predictive_contrast`
+([design studies](design-studies.md)).

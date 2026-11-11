@@ -57,7 +57,6 @@ def test_known_noise_and_bias_are_recovered_over_repeated_audits() -> None:
     sigma_o, sigma_a, bias = 0.5, 0.25, -0.02
     original = truth + bias + sigma_o * rng.normal(size=n_units)
     audit_all = truth + sigma_a * rng.normal(size=n_units)
-    sample0 = audit_sample(diag, edges=(0.5, 0.7), per_stratum=120, seed=0)
     shifts, ses, mcs = [], [], []
     for seed in range(300):
         s = audit_sample(diag, edges=(0.5, 0.7), per_stratum=120, seed=seed)
@@ -67,10 +66,10 @@ def test_known_noise_and_bias_are_recovered_over_repeated_audits() -> None:
         ses.append(est.shift_se)
         mcs.append(est.mc_sd)
     full = float(np.sum(audit_all - original))
-    assert sample0.sizes == tuple(int(x) for x in sample0.sizes)
     assert abs(np.mean(shifts) - full) < 4 * np.std(shifts) / np.sqrt(300)
     assert 0.8 < np.mean(ses) / np.std(shifts) < 1.25
     assert 0.9 < np.mean(mcs) / np.sqrt(n_units * (sigma_o**2 + sigma_a**2)) < 1.1
+    assert np.mean(mcs) >= np.sqrt(n_units * sigma_o**2)
 
 
 def test_label_requires_small_noise_small_shift_and_no_failures() -> None:
@@ -94,12 +93,73 @@ def test_label_requires_small_noise_small_shift_and_no_failures() -> None:
         stability_label(good, 4.0, max_mc_ratio=True, max_shift_ratio=0.5)
 
 
-def test_failed_units_are_counted_and_short_strata_refused() -> None:
-    """A non-finite value is counted, not silently averaged away."""
+def test_failed_units_are_counted_and_short_strata_are_insufficient() -> None:
+    """A non-finite value is counted; too few usable units is not an exception."""
     s = AuditSample((0, 1, 2, 3, 4, 5), (0, 0, 0, 1, 1, 1), (10, 10), (3, 3), 0, (0.5,))
     est = stability_estimate([0.0] * 6, [1.0, 3.0, 2.0, np.nan, 2.0, 4.0], s)
     assert est.n_failed == 1
-    with pytest.raises(ValueError, match="fewer than two"):
-        stability_estimate([0.0] * 6, [1.0, 3.0, 2.0, np.nan, np.nan, 4.0], s)
+    assert not est.insufficient
+    short = stability_estimate([0.0] * 6, [1.0, 3.0, 2.0, np.nan, np.nan, 4.0], s)
+    assert short.insufficient
+    assert np.isnan(short.mc_sd)
+    kw = {"max_mc_ratio": 10.0, "max_shift_ratio": 10.0}
+    assert stability_label(short, 1.0, **kw)["label"] == "not_assessable"
     with pytest.raises(ValueError, match="align"):
         stability_estimate([0.0] * 5, [1.0] * 5, s)
+
+
+def test_census_strata_have_no_sampling_error_and_samples_are_validated() -> None:
+    """A fully audited stratum contributes its exact sum; malformed samples fail."""
+    census = AuditSample((0, 1, 2), (0, 0, 0), (3,), (3,), 0, ())
+    est = stability_estimate([0.0, 0.0, 0.0], [1.0, 2.0, 3.0], census)
+    assert est.shift == 6.0
+    assert est.shift_se == 0.0
+    bad = (
+        AuditSample((0, 1), (0, 2), (5, 5), (1, 1), 0, (0.5,)),
+        AuditSample((0, 0), (0, 0), (5, 5), (2, 0), 0, (0.5,)),
+        AuditSample((0, 1), (0, 1), (5, 5), (2, 0), 0, (0.5,)),
+        AuditSample((0, 1, 2), (0, 0, 0), (2, 5), (3, 0), 0, (0.5,)),
+    )
+    for sample in bad:
+        with pytest.raises(ValueError, match="inconsistent"):
+            stability_estimate(
+                [0.0] * len(sample.units), [1.0] * len(sample.units), sample
+            )
+
+
+def test_sampler_accepts_numpy_integers_and_rejects_bad_diagnostics() -> None:
+    """np.int64 is a valid count; 2-D or empty diagnostics are refused."""
+    d = np.linspace(0, 1, 20)
+    assert audit_sample(d, edges=(0.5,), per_stratum=np.int64(3), seed=0).taken == (
+        3,
+        3,
+    )
+    with pytest.raises(ValueError, match="one-dimensional"):
+        audit_sample(d.reshape(4, 5), edges=(0.5,), per_stratum=2, seed=0)
+    with pytest.raises(ValueError, match="one-dimensional"):
+        audit_sample([], edges=(0.5,), per_stratum=2, seed=0)
+
+
+def test_heteroscedastic_strata_and_the_label_on_known_noise() -> None:
+    """Noise that grows with the diagnostic is weighted by stratum; labels follow."""
+    rng = np.random.default_rng(5)
+    n_units = 3000
+    diag = rng.uniform(0.0, 1.5, n_units)
+    sd_o = np.where(diag < 0.5, 0.05, np.where(diag < 0.7, 0.2, 1.0))
+    truth = rng.normal(size=n_units)
+
+    def label(sd_scale: float, bias: float) -> str:
+        original = truth + bias + sd_scale * sd_o * rng.normal(size=n_units)
+        audit = truth + 0.5 * sd_scale * sd_o * rng.normal(size=n_units)
+        s = audit_sample(diag, edges=(0.5, 0.7), per_stratum=150, seed=1)
+        u = np.array(s.units)
+        est = stability_estimate(original[u], audit[u], s)
+        total_sd = float(np.sqrt(np.sum((sd_scale * sd_o) ** 2)))
+        assert est.mc_sd >= 0.8 * total_sd
+        return str(
+            stability_label(est, 200.0, max_mc_ratio=0.25, max_shift_ratio=0.5)["label"]
+        )
+
+    assert label(0.05, 0.0) == "stable"
+    assert label(2.0, 0.0) == "not_assessable"
+    assert label(0.05, -0.5) == "not_assessable"
