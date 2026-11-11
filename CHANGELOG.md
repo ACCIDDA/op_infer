@@ -4,6 +4,15 @@
 
 ### Added
 
+- Add `op_infer.audit`: a blind stratified Monte Carlo stability audit for
+  sampled per-unit scores. `audit_sample` chooses units from a tail diagnostic
+  only (no score enters), `stability_estimate` returns the estimated shift of a
+  contrast total with its sampling error and a conservative Monte Carlo standard
+  deviation of the total, and `stability_label` returns `stable` or
+  `not_assessable` (never `tied`) from caller-supplied ratios; failed audited
+  units make a contrast not assessable. Tested against known Monte Carlo noise
+  and bias (#73).
+
 - Add `op_infer.stress`: `StressSpec` (a declared generator perturbation recorded
   in the immutable SBC run contract through `run_sbc(..., stress=...)`) and
   `stress_verdict`, which checks from the run manifests that two banks are a

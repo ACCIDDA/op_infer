@@ -47,5 +47,6 @@ nav:
   - Calibration reading policies: calibration-readings.md
   - SBC execution: sbc-runner.md
   - Masked-unit SBC: masked-sbc.md
+  - Monte Carlo stability audit: stability-audit.md
   - API: api.md
   - Architecture and planned interfaces: design/proposal.md

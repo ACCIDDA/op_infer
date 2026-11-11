@@ -48,6 +48,8 @@ See [implemented capabilities](capabilities.md) for the current scope and extras
 
 ::: op_infer.compare
 
+::: op_infer.audit
+
 ::: op_infer.identify
 
 ::: op_infer.adapters.op_identify
