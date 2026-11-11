@@ -65,6 +65,8 @@ See [implemented capabilities](capabilities.md) for the current scope and extras
 
 ::: op_infer.masked_sbc
 
+::: op_infer.stress
+
 ## Native masked NPE
 
 ::: op_infer.adapters.sbi

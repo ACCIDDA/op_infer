@@ -33,6 +33,8 @@ if TYPE_CHECKING:
 
     from numpy.typing import ArrayLike, NDArray
 
+    from op_infer.stress import StressSpec
+
 
 @dataclass(frozen=True)
 class SBCEstimand:
@@ -282,11 +284,15 @@ def run_sbc(  # noqa: PLR0913 - explicit scientific callbacks and artifact contr
     provenance: Provenance,
     mask: ArrayLike | None = None,
     n_jobs: int = 1,
+    stress: StressSpec | None = None,
 ) -> SBCExecution:
     """Schedule a prespecified SBC bank with guarded resume and counted failures.
 
     Use the reporting estimator and the same prior/acceptance rule as training.
     Disjoint ID shards share one directory; failures are complete artifacts too.
+    ``stress`` declares a perturbed generator implemented by the supplied
+    callbacks; it enters the immutable contract so a stress bank and its control
+    cannot share a directory (compare them with ``op_infer.stress.stress_verdict``).
     Existing failure records are retained on resume. No retry, plausibility filter
     or result-dependent stopping changes the planned denominator. Call aggregate
     and gate after all shards complete; replicate sizing uses trade-study helpers.
@@ -342,6 +348,8 @@ def run_sbc(  # noqa: PLR0913 - explicit scientific callbacks and artifact contr
         "observed": _digest_array(observed),
         "mask": None if mask is None else _digest_array(mask),
     }
+    if stress is not None:
+        contract["stress"] = stress.record()
     directory = Path(directory)
     contract_identity = _require_manifest(directory, contract)
     world = _SBCWorld(

@@ -84,3 +84,30 @@ Generation uses a fresh temporary bank, checks guarded resume, and retains the
 full [plotted inputs](assets/normal-sbc/data.json). The check reruns the same fixture and
 verifies the table, plotted data and source/export fingerprints without
 Matplotlib. It requires the study extra and runs in the required study CI job.
+
+## Robustness under a perturbed generator
+
+SBC under the training generator checks the computation, not the behaviour of an
+unchanged estimator when the data come from another generator. Neural
+simulation-based inference can degrade under misspecification and no tested
+remedy works in all cases (Cannon, Ward and Schmon 2022, arXiv:2209.01845; Ward
+et al. 2022, arXiv:2210.06564).
+
+Run the same planned bank twice with the same seed, replicate IDs, estimator and
+estimands: once as the control, once with callbacks that implement a declared
+perturbation, passing `stress=StressSpec(name, description, settings)` to
+`run_sbc`. The stress record enters the immutable run contract, so the two banks
+cannot share a directory. Then call `op_infer.stress.stress_verdict(stress_dir,
+control_dir, estimands, level=..., floor=..., drop=...)`.
+
+The helper pairs replicates by replicate ID, counts failed and unpaired
+replicates instead of dropping them, reports the coverage of the central interval
+under stress and control with Wilson intervals, and passes an estimand when its
+stress coverage is at least `max(floor, control coverage - drop)`. `floor` and
+`drop` have no defaults: they are the caller's reading-rule choices, to be fixed
+before the banks are read. The result is a **robustness** reading, not
+calibration; the intervals are marginal and carry no adjustment across
+estimands. When the perturbation changes the prior sampler, the paired truths
+differ by construction; the runner does not store the truths, so the helper
+cannot count equal-truth pairs.
+

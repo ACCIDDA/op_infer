@@ -4,6 +4,14 @@
 
 ### Added
 
+- Add `op_infer.stress`: `StressSpec` (a declared generator perturbation recorded
+  in the immutable SBC run contract through `run_sbc(..., stress=...)`) and
+  `stress_verdict`, which compares the central-interval coverage of an unchanged
+  estimator under the perturbation with a paired control bank (Wilson intervals,
+  failed and unpaired replicates counted, caller-supplied floor and drop). A
+  robustness reading, not calibration. Tested against the analytic coverage of an
+  exact conjugate posterior under inflated noise (#71).
+
 - Add `DesignStudy.confusion` and `DesignConfusion`: the generator-by-verdict
   table of a replicated design study (favour each model, indistinguishable,
   failed) with fixed-sample Wilson intervals, an optional Bonferroni level over a
