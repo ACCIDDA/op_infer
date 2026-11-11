@@ -40,3 +40,21 @@ against an independent rerun, not that it is accurate. `z` (default 1.645) is th
 only default of the rule. The package does not score units; use your estimator
 and, for paired contrasts, `compare.paired_predictive_contrast`
 ([design studies](design-studies.md)).
+
+## Reading a paired contrast
+
+`compare.three_valued_contrast` reads a paired held-out contrast with a rule
+fixed in advance. With mean paired difference `d`, its standard error `se`, a
+caller-supplied `floor` in score units and a multiplicity quantile `z_K` for the
+`K` registered contrasts, the contrast is **separated** when
+`|d| > max(floor, z_K * se)`, **tied** when `|d| <= max(floor, 1.96 * se)`, and
+**borderline** in between. Convert the result of `audit.stability_label` to a
+Boolean with `stable=(audit_result["label"] == "stable")`; omit `stable` or
+pass `None` only when no audit was run. Passing a label string or the result
+dictionary itself is rejected. A contrast whose
+audit failed, or whose scores are non-finite or fewer than two, is
+**not assessable**, never tied. Tied means the difference lies within the fixed
+bounds, not that the models are equivalent; the normal approximation to a
+predictive-score difference is poorly calibrated when predictions are similar,
+under misspecification with outliers and for few units (Sivula, Magnusson,
+Matamoros and Vehtari 2025, arXiv:2008.10296), which is why the floor exists.

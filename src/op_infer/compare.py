@@ -18,6 +18,7 @@ its actual denominator. The held-out API below does not implement LOO/PSIS.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
@@ -28,7 +29,13 @@ if TYPE_CHECKING:
 
     from op_infer.posterior import ArtifactReference
 
-__all__ = ["PredictiveContrast", "UnitPredictiveScores", "paired_predictive_contrast"]
+__all__ = [
+    "PredictiveContrast",
+    "ThreeValuedContrast",
+    "UnitPredictiveScores",
+    "paired_predictive_contrast",
+    "three_valued_contrast",
+]
 
 
 @dataclass(frozen=True)
@@ -150,3 +157,175 @@ def paired_predictive_contrast(
         else "indistinguishable"
     )
     return PredictiveContrast(outcome, mean, se, len(ids), 0)
+
+
+@dataclass(frozen=True)
+class ThreeValuedContrast:
+    """A paired contrast read as separated, borderline, tied or not assessable.
+
+    ``tied_bound`` and ``separated_bound`` are the two fixed bounds on the
+    absolute mean difference: at or below ``tied_bound`` the contrast is tied,
+    above ``separated_bound`` it is separated, and between them it is
+    borderline. Both are ``None`` when the contrast is not assessable.
+    ``favours`` names the side with the larger mean score for separated and
+    borderline readings.
+    """
+
+    reading: Literal["separated", "borderline", "tied", "not_assessable"]
+    favours: Literal["generator", "alternative"] | None
+    mean_delta: float | None
+    se_delta: float | None
+    n_units: int
+    nonfinite_units: int
+    tied_bound: float | None
+    separated_bound: float | None
+    audited: bool
+    reason: str | None = None
+
+
+def three_valued_contrast(  # noqa: PLR0913 - explicit reading rule
+    generator: UnitPredictiveScores,
+    alternative: UnitPredictiveScores,
+    *,
+    floor: float,
+    z_multiplicity: float,
+    z_base: float = 1.96,
+    stable: bool | None = None,
+) -> ThreeValuedContrast:
+    """Read a paired held-out contrast with a floor and a multiplicity bound.
+
+    The mean paired difference ``d`` and its standard error ``se`` come from
+    `paired_predictive_contrast`. The reading rule is fixed before the contrast
+    is seen: the contrast is **separated** when ``|d| > max(floor,
+    z_multiplicity * se)``, **tied** when ``|d| <= max(floor, z_base * se)``,
+    and **borderline** in between. ``z_multiplicity`` is the caller's quantile
+    for the number of registered contrasts (for example the two-sided
+    ``1 - 0.05 / (2 K)`` normal quantile for ``K`` contrasts), so it must not
+    be smaller than ``z_base``. When ``floor`` dominates both products the
+    borderline band is empty.
+
+    The normal approximation to a predictive-score difference is poorly
+    calibrated for similar predictions, under misspecification with outliers
+    and for small numbers of units (Sivula, Magnusson, Matamoros and Vehtari
+    2025, arXiv:2008.10296). Two consequences are built in. A contrast whose
+    Monte Carlo stability check failed (``stable=False``, for example from
+    `op_infer.audit.stability_label`), or whose scores are non-finite, or that
+    has fewer than two units, is **not assessable**: it is never reported as
+    tied, because a failed check carries no evidence of equivalence. Tied means
+    only that the difference is within the fixed bounds, not that the models
+    are equivalent.
+
+    Args:
+        generator: Held-out unit scores of the generating-model side.
+        alternative: Held-out unit scores of the alternative on the same units.
+        floor: Smallest absolute mean difference worth reading, in score units
+            (nonnegative).
+        z_multiplicity: Multiplicity-adjusted standard-error multiple that
+            defines the separated bound.
+        z_base: Unadjusted standard-error multiple that defines the tied bound.
+        stable: Result of a caller-run Monte Carlo stability check, or ``None``
+            when no audit was run (recorded in ``audited``).
+
+    Returns:
+        The reading with both bounds and the unit accounting.
+
+    Raises:
+        ValueError: Units or targets disagree, or ``floor``, ``z_base`` or
+            ``z_multiplicity`` is invalid.
+
+    Examples:
+        >>> from op_infer.posterior import ArtifactReference
+        >>> target = ArtifactReference.from_bytes(b"units", kind="example-v1")
+        >>> ids = tuple(str(i) for i in range(8))
+        >>> left = UnitPredictiveScores(
+        ...     [1.0, 2.0, 1.5, 2.5, 1.0, 2.0, 1.5, 2.5],
+        ...     ids,
+        ...     target,
+        ...     "independent_unit",
+        ... )
+        >>> right = UnitPredictiveScores([0.0] * 8, ids, target, "independent_unit")
+        >>> three_valued_contrast(
+        ...     left, right, floor=0.1, z_multiplicity=2.5
+        ... ).reading
+        'separated'
+        >>> three_valued_contrast(
+        ...     left, right, floor=5.0, z_multiplicity=2.5
+        ... ).reading
+        'tied'
+        >>> three_valued_contrast(
+        ...     left, right, floor=0.1, z_multiplicity=2.5, stable=False
+        ... ).reading
+        'not_assessable'
+    """
+    if isinstance(floor, bool) or not math.isfinite(floor) or floor < 0:
+        msg = "floor must be a finite nonnegative number"
+        raise ValueError(msg)
+    if isinstance(z_base, bool) or not math.isfinite(z_base) or z_base <= 0:
+        msg = "z_base must be finite and positive"
+        raise ValueError(msg)
+    if (
+        isinstance(z_multiplicity, bool)
+        or not math.isfinite(z_multiplicity)
+        or z_multiplicity < z_base
+    ):
+        msg = "z_multiplicity must be finite and at least z_base"
+        raise ValueError(msg)
+    if stable is not None and not isinstance(stable, bool):
+        msg = "stable must be a bool or None"
+        raise ValueError(msg)
+    base = paired_predictive_contrast(generator, alternative)
+    audited = stable is not None
+    if base.outcome == "failed" or base.mean_delta is None or base.se_delta is None:
+        return ThreeValuedContrast(
+            "not_assessable",
+            None,
+            None,
+            None,
+            base.n_units,
+            base.nonfinite_units,
+            None,
+            None,
+            audited,
+            base.reason,
+        )
+    if stable is False:
+        return ThreeValuedContrast(
+            "not_assessable",
+            None,
+            base.mean_delta,
+            base.se_delta,
+            base.n_units,
+            0,
+            None,
+            None,
+            audited,
+            "Monte Carlo stability check failed",
+        )
+    tied_bound = max(floor, z_base * base.se_delta)
+    separated_bound = max(floor, z_multiplicity * base.se_delta)
+    size = abs(base.mean_delta)
+    reading: Literal["separated", "borderline", "tied"] = (
+        "separated"
+        if size > separated_bound
+        else "tied"
+        if size <= tied_bound
+        else "borderline"
+    )
+    favours: Literal["generator", "alternative"] | None = (
+        None
+        if reading == "tied"
+        else "generator"
+        if base.mean_delta > 0
+        else "alternative"
+    )
+    return ThreeValuedContrast(
+        reading,
+        favours,
+        base.mean_delta,
+        base.se_delta,
+        base.n_units,
+        0,
+        tied_bound,
+        separated_bound,
+        audited,
+    )
