@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -10,10 +11,13 @@ import pytest
 from op_infer.compare import UnitPredictiveScores, three_valued_contrast
 from op_infer.posterior import ArtifactReference
 
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
 TARGET = ArtifactReference.from_bytes(b"units", kind="test-v1")
 
 
-def _scores(values: list[float] | np.ndarray) -> UnitPredictiveScores:
+def _scores(values: list[float] | NDArray[np.float64]) -> UnitPredictiveScores:
     ids = tuple(str(i) for i in range(len(values)))
     return UnitPredictiveScores(list(values), ids, TARGET, "independent_unit")
 
@@ -127,3 +131,35 @@ def test_simulated_ties_are_rarely_separated() -> None:
     # Four binomial standard deviations above the nominal rate.
     assert rate <= nominal + 4 * math.sqrt(nominal * (1 - nominal) / n_rep)
     assert counts["tied"] / n_rep > 0.9
+
+
+@pytest.mark.parametrize(
+    "stable", ["stable", "not_assessable", {"label": "not_assessable"}, 0, 1]
+)
+def test_invalid_stability_result_is_refused(stable: object) -> None:
+    """Audit records and truthy labels cannot bypass the stability check."""
+    side = _scores([1.0, 2.0, 3.0])
+    with pytest.raises(ValueError, match="stable must be a bool or None"):
+        three_valued_contrast(
+            side,
+            side,
+            floor=0.0,
+            z_multiplicity=2.5,
+            stable=stable,  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.parametrize("label", ["stable", "not_assessable"])
+def test_audit_label_is_explicitly_converted(label: str) -> None:
+    """The documented Boolean conversion preserves a failed audit."""
+    audit_result = {"label": label}
+    side = _scores([1.0, 2.0, 3.0])
+    result = three_valued_contrast(
+        side,
+        side,
+        floor=0.0,
+        z_multiplicity=2.5,
+        stable=(audit_result["label"] == "stable"),
+    )
+    assert result.audited
+    assert result.reading == ("tied" if label == "stable" else "not_assessable")

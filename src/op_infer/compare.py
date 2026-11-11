@@ -270,6 +270,9 @@ def three_valued_contrast(  # noqa: PLR0913 - explicit reading rule
     ):
         msg = "z_multiplicity must be finite and at least z_base"
         raise ValueError(msg)
+    if stable is not None and not isinstance(stable, bool):
+        msg = "stable must be a bool or None"
+        raise ValueError(msg)
     base = paired_predictive_contrast(generator, alternative)
     audited = stable is not None
     if base.outcome == "failed" or base.mean_delta is None or base.se_delta is None:

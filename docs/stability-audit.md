@@ -48,7 +48,10 @@ fixed in advance. With mean paired difference `d`, its standard error `se`, a
 caller-supplied `floor` in score units and a multiplicity quantile `z_K` for the
 `K` registered contrasts, the contrast is **separated** when
 `|d| > max(floor, z_K * se)`, **tied** when `|d| <= max(floor, 1.96 * se)`, and
-**borderline** in between. Pass the stability label as `stable`: a contrast whose
+**borderline** in between. Convert the result of `audit.stability_label` to a
+Boolean with `stable=(audit_result["label"] == "stable")`; omit `stable` or
+pass `None` only when no audit was run. Passing a label string or the result
+dictionary itself is rejected. A contrast whose
 audit failed, or whose scores are non-finite or fewer than two, is
 **not assessable**, never tied. Tied means the difference lies within the fixed
 bounds, not that the models are equivalent; the normal approximation to a
