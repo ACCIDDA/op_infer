@@ -98,12 +98,15 @@ estimands: once as the control, once with callbacks that implement a declared
 perturbation, passing `stress=StressSpec(name, description, settings)` to
 `run_sbc`. The stress record enters the immutable run contract, so the two banks
 cannot share a directory. Then call `op_infer.stress.stress_verdict(stress_dir,
-control_dir, estimands, level=..., floor=..., drop=...)`.
+control_dir, estimands, level=..., floor=..., drop=...)`. It reads the two run manifests and raises
+`ValueError` unless the stress bank carries a stress record and the two contracts
+otherwise agree.
 
 The helper pairs replicates by replicate ID, counts failed and unpaired
 replicates instead of dropping them, reports the coverage of the central interval
 under stress and control with Wilson intervals, and passes an estimand when its
-stress coverage is at least `max(floor, control coverage - drop)`. `floor` and
+stress coverage point estimate is at least `max(floor, control coverage - drop)`
+(the Wilson intervals are reported but do not enter the decision). `floor` and
 `drop` have no defaults: they are the caller's reading-rule choices, to be fixed
 before the banks are read. The result is a **robustness** reading, not
 calibration; the intervals are marginal and carry no adjustment across

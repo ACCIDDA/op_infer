@@ -109,10 +109,10 @@ def test_known_variance_inflation_is_detected_against_the_paired_control(
     assert "not calibration" in verdict["reading"]
 
 
-def test_atom_estimand_is_read_with_randomised_pits_and_a_null_stress_passes(
+def test_clipped_atom_estimand_runs_through_the_bank_and_a_null_stress_passes(
     tmp_path: Path,
 ) -> None:
-    """An exact posterior for a clipped estimand is calibrated at its atom."""
+    """An exact posterior for a clipped (atom) estimand reads as calibrated."""
     control, same = tmp_path / "control", tmp_path / "same"
     _bank(control, 1.0, 600, None)
     _bank(same, 1.0, 600, StressSpec("noop", "no change"))
