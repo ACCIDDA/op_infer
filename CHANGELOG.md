@@ -4,6 +4,14 @@
 
 ### Added
 
+- Add `op_infer.ensemble_calibration`: a descriptive per-member and mixture
+  calibration report (`member_calibration`, `MemberRecords`): standardised-error
+  SD and 50/90% coverage for every member and the mixture, the width gap between
+  the mixture and its members, member agreement, per-member rank-flag counts
+  (Benjamini-Hochberg) and the validation-loss spread. Nothing is gated. Tested
+  against the analytic standard deviations of a mixture of two correctly wide
+  members with displaced locations (#72).
+
 - Add `op_infer.audit`: a blind stratified Monte Carlo stability audit for
   sampled per-unit scores. `audit_sample` chooses units from a tail diagnostic
   only (no score enters), `stability_estimate` returns the estimated shift of a
