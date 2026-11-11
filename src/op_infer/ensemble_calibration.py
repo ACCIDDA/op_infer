@@ -189,9 +189,9 @@ def member_calibration(
 
     With two or more members, ``z_sd_gap`` is the smallest member ``z_sd`` minus
     the mixture ``z_sd``: positive when the mixture's standardised errors are
-    smaller than every member's, that is when it is wider than its own error
-    scale relative to the members (a positive gap does not by itself show that the
-    mixture is wide enough). ``agreement`` is the median over replicates of the
+    smaller than every member's, which is the mixture being wider than its own
+    error scale (it does not by itself show that the mixture is wide enough).
+    ``agreement`` is the median over replicates of the
     range of member means in units of the mixture SD; it grows with the number of
     members and is not comparable across ensemble sizes. With one member both are
     ``None``. For atom estimands the standardised-error fields are ``None``.

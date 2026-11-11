@@ -44,8 +44,8 @@ Across estimands it counts rank flags (Benjamini-Hochberg, through
 `calibrate.aggregate`) per member and for the mixture, passes through the
 replicate count, failed count and the `underpowered` banner, and reports the
 spread of the validation losses. `members_with_flags` has no multiplicity control
-across members (about `1 - (1 - alpha)**M` per estimand for calibrated members
-sharing the same truths), so it is not evidence of member miscalibration by
+across members (approximately `1 - (1 - alpha)**M` per estimand for calibrated members
+sharing the same truths, ignoring the adjustment across estimands), so it is not evidence of member miscalibration by
 itself. **Nothing is gated**: the report is a description and does
 not change any gate decision. Failed replicates are not records; count them
 separately, as in the SBC runner.

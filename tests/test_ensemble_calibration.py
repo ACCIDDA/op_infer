@@ -233,5 +233,7 @@ def test_inputs_are_validated() -> None:
         member_calibration({"t": nonfinite})
     with pytest.raises(ValueError, match="atoms"):
         MemberRecords.from_draws(np.zeros(3), np.zeros((3, 2, 5)), atoms=True)
+    with pytest.raises(ValueError, match="at least two draws"):
+        MemberRecords.from_draws(np.zeros(3), np.zeros((3, 2, 1)))
     with pytest.raises(ValueError, match="truth must be"):
         MemberRecords.from_draws(np.zeros(3), np.zeros((4, 2, 5)))
