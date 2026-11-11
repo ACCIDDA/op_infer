@@ -11,7 +11,15 @@ import pytest
 from op_infer.ensemble_calibration import MemberRecords, member_calibration
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from numpy.typing import NDArray
+
+_HERMEGAUSS = cast(
+    "Callable[[int], tuple[NDArray[np.float64], NDArray[np.float64]]]",
+    np.polynomial.hermite_e.hermegauss,
+)
+_MEDIAN_ABS_NORMAL = 0.6744897501960817
 
 
 def _phi(z: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -32,9 +40,8 @@ def _bank(delta: float, n: int = 8000, seed: int = 0) -> MemberRecords:
     rng = np.random.default_rng(seed)
     theta = rng.normal(size=n)
     x = theta + rng.normal(size=n)
-    centre = x / 2.0
     u = rng.normal(size=(2, n))
-    means = centre + delta * u
+    means = x / 2.0 + delta * u
     sd_member = math.sqrt(0.5 + delta**2)
     member_pit = _phi((theta - means) / sd_member)
     mix_sd = np.sqrt(0.5 + delta**2 + delta**2 * (u[0] - u[1]) ** 2 / 4.0)
@@ -49,29 +56,43 @@ def _bank(delta: float, n: int = 8000, seed: int = 0) -> MemberRecords:
     )
 
 
-def _expected_mixture_z_sd(delta: float) -> float:
-    """sqrt(E[err^2] E[1 / sd_mix^2]) with err and sd_mix independent."""
-    g, w = np.polynomial.hermite_e.hermegauss(80)
+def _expected_mixture_z(delta: float) -> tuple[float, float]:
+    """(z_sd, z_rms) of the mixture: sqrt(E[err^2] E[1 / sd_mix^2]); mean zero."""
+    g, w = _HERMEGAUSS(80)
     inv = float(np.sum(w / (0.5 + delta**2 + delta**2 * g**2 / 2.0)) / np.sum(w))
-    return math.sqrt((0.5 + delta**2 / 2.0) * inv)
+    value = math.sqrt((0.5 + delta**2 / 2.0) * inv)
+    return value, value
 
 
 def test_calibrated_members_pooled_into_a_wider_mixture_match_the_analytic_value() -> (
     None
 ):
-    """Members have SD 1; the mixture's SD is below 1 by the exact expectation."""
+    """Members have SD 1 and mean 0; the mixture's SD is its exact expectation."""
     delta = 1.0
     out = member_calibration({"theta": _bank(delta)})
     row = out["estimands"]["theta"]
     for m in row["members"]:
         assert m["z_sd"] == pytest.approx(1.0, abs=0.03)
+        assert m["z_mean"] == pytest.approx(0.0, abs=0.03)
         assert m["coverage90"] == pytest.approx(0.9, abs=0.02)
-    expected = _expected_mixture_z_sd(delta)
+    expected, _ = _expected_mixture_z(delta)
     assert expected < 0.9
     assert row["mixture"]["z_sd"] == pytest.approx(expected, rel=0.03)
+    assert row["mixture"]["z_rms"] == pytest.approx(expected, rel=0.03)
     assert row["mixture"]["coverage90"] > 0.92
     assert row["z_sd_gap"] > 0.1
     assert out["reading"].startswith("descriptive")
+
+
+def test_agreement_matches_its_analytic_median() -> None:
+    """Range of means is delta sqrt(2)|g|; the median is at |g| = 0.6745."""
+    delta = 0.8
+    g = _MEDIAN_ABS_NORMAL
+    expected = (
+        delta * math.sqrt(2.0) * g / math.sqrt(0.5 + delta**2 + delta**2 * g**2 / 2.0)
+    )
+    out = member_calibration({"theta": _bank(delta, n=20000, seed=2)})
+    assert out["estimands"]["theta"]["agreement"] == pytest.approx(expected, rel=0.04)
 
 
 def test_no_location_disagreement_gives_unit_sd_no_gap_and_zero_agreement() -> None:
@@ -83,22 +104,15 @@ def test_no_location_disagreement_gives_unit_sd_no_gap_and_zero_agreement() -> N
     assert row["agreement"] == pytest.approx(0.0, abs=1e-9)
     assert out["validation_loss_spread"] == 1.5
     assert out["mixture_n_flagged"] == 0
+    assert out["underpowered"] is False
+    assert out["n_replicates"] == 8000
 
 
-def test_agreement_is_the_median_range_of_member_means_over_the_mixture_sd() -> None:
-    """The reported agreement equals the direct computation."""
-    bank = _bank(0.7, n=500, seed=3)
-    out = member_calibration({"theta": bank})
-    means = np.asarray(bank.member_mean)
-    direct = np.median((means.max(0) - means.min(0)) / np.asarray(bank.mixture_sd))
-    assert out["estimands"]["theta"]["agreement"] == pytest.approx(direct)
-
-
-def test_flags_are_counted_per_member_and_nothing_is_gated() -> None:
-    """A badly overconfident member is flagged; the report only counts."""
+def test_flags_are_counted_per_member_and_for_a_misspecified_mixture() -> None:
+    """A too-narrow member and a too-narrow mixture are flagged; nothing is gated."""
     bank = _bank(0.5)
     pits = np.asarray(bank.member_pit).copy()
-    pits[0] = np.clip(0.5 + 3.0 * (pits[0] - 0.5), 0.0, 1.0)  # a too-narrow member
+    pits[0] = np.clip(0.5 + 3.0 * (pits[0] - 0.5), 0.0, 1.0)
     bad = MemberRecords(
         bank.truth,
         bank.member_mean,
@@ -106,13 +120,51 @@ def test_flags_are_counted_per_member_and_nothing_is_gated() -> None:
         pits,
         bank.mixture_mean,
         bank.mixture_sd,
-        bank.mixture_pit,
+        np.clip(0.5 + 3.0 * (np.asarray(bank.mixture_pit) - 0.5), 0.0, 1.0),
     )
-    out = member_calibration({"theta": bad})
+    out = member_calibration({"theta": bad}, n_failed=7)
     assert out["member_n_flagged"][0] == 1
     assert out["member_n_flagged"][1] == 0
+    assert out["mixture_n_flagged"] == 1
     assert out["members_with_flags"] == 1
+    assert out["n_failed"] == 7
     assert "pass" not in out
+
+
+def test_point_mass_estimand_with_randomised_pits_reads_as_calibrated() -> None:
+    """A clipped estimand drawn through from_draws: PITs uniform, no flags, z None."""
+    rng = np.random.default_rng(4)
+    n, members, draws = 3000, 3, 400
+    theta = rng.normal(size=n)
+    x = theta + rng.normal(size=n)
+    post = rng.normal(x[:, None, None] / 2.0, math.sqrt(0.5), size=(n, members, draws))
+    rec = MemberRecords.from_draws(
+        np.maximum(theta, 0.0),
+        np.maximum(post, 0.0),
+        atoms=True,
+        rng=np.random.default_rng(9),
+    )
+    out = member_calibration({"positive_part": rec})
+    row = out["estimands"]["positive_part"]
+    assert row["z_sd_gap"] is None
+    assert row["agreement"] is None
+    assert row["mixture"]["z_sd"] is None
+    assert row["mixture"]["coverage90"] == pytest.approx(0.9, abs=0.025)
+    assert out["mixture_n_flagged"] == 0
+    assert out["member_n_flagged"] == [0, 0, 0]
+
+
+def test_single_member_has_no_gap_or_agreement_and_small_banks_are_underpowered() -> (
+    None
+):
+    """M = 1 reports None, not zero; a small bank surfaces the power banner."""
+    rng = np.random.default_rng(1)
+    rec = MemberRecords.from_draws(rng.normal(size=30), rng.normal(size=(30, 1, 100)))
+    out = member_calibration({"t": rec})
+    assert out["estimands"]["t"]["z_sd_gap"] is None
+    assert out["estimands"]["t"]["agreement"] is None
+    assert out["underpowered"] is True
+    assert "UNDERPOWERED" in out["underpowered_banner"]
 
 
 def test_inputs_are_validated() -> None:
@@ -133,6 +185,17 @@ def test_inputs_are_validated() -> None:
     )
     with pytest.raises(ValueError, match="positive"):
         member_calibration({"t": bad_sd})
+    atom_sd = MemberRecords(
+        good.truth,
+        good.member_mean,
+        np.zeros((2, 50)),
+        good.member_pit,
+        good.mixture_mean,
+        np.zeros(50),
+        good.mixture_pit,
+        atoms=True,
+    )
+    assert member_calibration({"t": atom_sd})["n_members"] == 2
     short = MemberRecords(
         good.truth,
         np.asarray(good.member_mean)[:, :10],
@@ -168,3 +231,7 @@ def test_inputs_are_validated() -> None:
     )
     with pytest.raises(ValueError, match="finite"):
         member_calibration({"t": nonfinite})
+    with pytest.raises(ValueError, match="atoms"):
+        MemberRecords.from_draws(np.zeros(3), np.zeros((3, 2, 5)), atoms=True)
+    with pytest.raises(ValueError, match="truth must be"):
+        MemberRecords.from_draws(np.zeros(3), np.zeros((4, 2, 5)))
