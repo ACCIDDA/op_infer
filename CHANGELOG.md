@@ -4,6 +4,12 @@
 
 ### Added
 
+- Add `compare.three_valued_contrast` and `ThreeValuedContrast`: a paired
+  held-out contrast read as separated (`|d| > max(floor, z_K se)`), tied
+  (`|d| <= max(floor, 1.96 se)`), borderline in between, or not assessable when
+  the scores are non-finite, fewer than two, or the caller's Monte Carlo
+  stability check failed. Tested on simulated exact ties and a point mass (#78).
+
 - Add `op_infer.ensemble_calibration`: a descriptive per-member and mixture
   calibration report (`member_calibration`, `MemberRecords`, and
   `MemberRecords.from_draws` to build records from posterior draws): standardised-error
