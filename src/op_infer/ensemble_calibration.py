@@ -95,7 +95,7 @@ class MemberRecords:
         if t.ndim != 1 or d.ndim != 3 or d.shape[0] != t.shape[0]:
             msg = "truth must be (R,) and draws (R, M, S)"
             raise ValueError(msg)
-        if d.shape[2] < 2:  # noqa: PLR2004 - a posterior SD needs two draws
+        if d.shape[2] < 2:
             msg = "at least two draws per member are needed for a posterior SD"
             raise ValueError(msg)
         n, m, _ = d.shape
