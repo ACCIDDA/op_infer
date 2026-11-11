@@ -6,8 +6,9 @@
 
 - Add `op_infer.stress`: `StressSpec` (a declared generator perturbation recorded
   in the immutable SBC run contract through `run_sbc(..., stress=...)`) and
-  `stress_verdict`, which compares the central-interval coverage of an unchanged
-  estimator under the perturbation with a paired control bank (Wilson intervals,
+  `stress_verdict`, which checks from the run manifests that two banks are a
+  stress and control pair, then compares the central-interval coverage of an
+  unchanged estimator under the perturbation with the control (Wilson intervals,
   failed and unpaired replicates counted, caller-supplied floor and drop). A
   robustness reading, not calibration. Tested against the analytic coverage of an
   exact conjugate posterior under inflated noise (#71).
